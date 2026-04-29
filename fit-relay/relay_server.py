@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""FIT WebSocket relay — opaque fan-out (Architecture §3.3 hackathon slice)."""
+"""FIT WebSocket relay — opaque fan-out (Architecture §3.3 hackathon slice).
+
+Listen address: FIT_RELAY_HOST (default ``0.0.0.0``) so phones/laptops on the same LAN
+can connect. Use FIT_RELAY_HOST=127.0.0.1 for loopback-only. FIT_RELAY_PORT defaults 8765.
+"""
 
 from __future__ import annotations
 
 import asyncio
 import json
 import logging
+import os
 from collections import defaultdict
 from typing import Any
 
@@ -77,8 +82,16 @@ async def handler(ws: Any) -> None:
 
 
 async def main() -> None:
-    async with websockets.serve(handler, "127.0.0.1", 8765):
-        LOG.info("FIT relay ws://127.0.0.1:8765")
+    host = os.environ.get("FIT_RELAY_HOST", "0.0.0.0")
+    port = int(os.environ.get("FIT_RELAY_PORT", "8765"))
+
+    async with websockets.serve(handler, host, port):
+        if host == "0.0.0.0":
+            LOG.info("FIT relay listening on all interfaces · ws://0.0.0.0:%s", port)
+            LOG.info("LAN clients: use ws://<this-host-LAN-ip>:%s in VITE_RELAY_WS", port)
+            LOG.info("Local only override: FIT_RELAY_HOST=127.0.0.1")
+        else:
+            LOG.info("FIT relay ws://%s:%s", host, port)
         await asyncio.Future()
 
 
