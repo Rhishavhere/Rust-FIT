@@ -1,0 +1,44 @@
+# Rust
+**/target/
+**/*.rs.bk
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Node / frontend (Member 3; stub `fit-app/dist/index.html` is tracked for CI)
+**/dist/
+!fit-app/dist/index.html
+
+# Package caches
+.cache/
+.parcel-cache/
+.npm/
+.pnpm-store/
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.Python
+venv/
+
+# Env & secrets — never commit
+.env
+.env.*
+!.env.example
+
+# FIT cryptographic artifacts — never commit
+*.fit
+*.fitshare
+*.keys.json
+
+# Tauri codegen
+fit-app/src-tauri/gen/schemas/
+
+# Logs
+*.log
+npm-debug.log*

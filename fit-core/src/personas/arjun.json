@@ -1,0 +1,80 @@
+{
+  "display_name": "Arjun Nair",
+  "layers": [
+    {
+      "pan": "ARJUN1234N",
+      "pan_masked": "XXXXX1234N",
+      "aadhaar_hash": "x1x2x3",
+      "dob": "1995-08-19",
+      "full_name": "Arjun Nair",
+      "address": {"line1": "Indiranagar", "city": "Bengaluru", "state": "Karnataka", "pincode": "560038"},
+      "kyc_status": "verified",
+      "kyc_verified_by": "Aadhaar eKYC",
+      "kyc_date": "2024-02-01",
+      "nationality": "Indian",
+      "photo_hash": "blake3_ar"
+    },
+    {
+      "cibil_score": 694,
+      "cibil_score_history": [{"month": "2026-04", "score": 694}],
+      "active_loans": [],
+      "closed_loans": [],
+      "total_outstanding": 0,
+      "total_emi_monthly": 0,
+      "credit_cards": [
+        {"bank": "Axis", "limit": 150000, "outstanding": 100000, "utilization_pct": 67},
+        {"bank": "SBI", "limit": 100000, "outstanding": 67000, "utilization_pct": 67}
+      ],
+      "overall_credit_utilization_pct": 67,
+      "defaults": 0,
+      "enquiries_last_6m": 2
+    },
+    {
+      "real_estate": [],
+      "equity_portfolio": {
+        "total_value": 2200000,
+        "holdings": [
+          {"name": "Basket A", "value": 1200000, "weight_pct": 54},
+          {"name": "Basket B", "value": 1000000, "weight_pct": 46}
+        ]
+      },
+      "mutual_funds": {"total_nav": 0, "funds": []},
+      "fixed_deposits": [{"bank": "Axis", "amount": 500000, "maturity": "2027-01-15"}],
+      "gold": {"grams": 0, "value": 0},
+      "bank_balance_range": "80000-250000",
+      "total_assets": 2700000,
+      "total_liabilities": 0,
+      "net_worth": 2700000
+    },
+    {
+      "itr": [
+        {"fy": "2023-24", "income": 880000, "tax_paid": 90000, "filed": true},
+        {"fy": "2024-25", "income": 940000, "tax_paid": 110000, "filed": true}
+      ],
+      "business": {"name": "", "cin": "", "type": "", "gstin": "", "gst_status": "not_applicable", "gst_quarterly_turnover": [], "director_in": [], "mca_compliance": "n/a"},
+      "employment_status": "trader"
+    },
+    {
+      "investments": [],
+      "total_deployed": 0,
+      "investment_count": 0,
+      "avg_ticket_size": 0,
+      "sectors": [],
+      "trading_volume_monthly": [
+        {"month": "2026-01", "volume": 1800000},
+        {"month": "2026-02", "volume": 2200000},
+        {"month": "2026-03", "volume": 4100000},
+        {"month": "2026-04", "volume": 3000000}
+      ],
+      "portfolio_churn_rate_pct": 42
+    },
+    {
+      "fit_age_days": 60,
+      "fit_share_count": 2,
+      "active_shares": 0,
+      "endorsements": [],
+      "attestations": [{"type": "KYC", "attester": "Aadhaar eKYC", "date": "2024-02-01", "valid": true}],
+      "access_log_summary": {"total_accesses": 3, "unique_accessors": 1, "last_accessed": "2026-04-20T10:00:00Z"}
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "display_name": "Rajiv Menon",
+  "layers": [
+    {
+      "pan": "RJMBM1234J",
+      "pan_masked": "XXXXX1234J",
+      "aadhaar_hash": "h1h2h3",
+      "dob": "1978-11-02",
+      "full_name": "Rajiv Menon",
+      "address": {"line1": "Poes Garden", "city": "Chennai", "state": "Tamil Nadu", "pincode": "600018"},
+      "kyc_status": "verified",
+      "kyc_verified_by": "Aadhaar eKYC",
+      "kyc_date": "2022-01-10",
+      "nationality": "Indian",
+      "photo_hash": "blake3_rj"
+    },
+    {
+      "cibil_score": 811,
+      "cibil_score_history": [
+        {"month": "2025-05", "score": 800},
+        {"month": "2026-04", "score": 811}
+      ],
+      "active_loans": [],
+      "closed_loans": [],
+      "total_outstanding": 0,
+      "total_emi_monthly": 0,
+      "credit_cards": [],
+      "overall_credit_utilization_pct": 12,
+      "defaults": 0,
+      "enquiries_last_6m": 0
+    },
+    {
+      "real_estate": [
+        {"type": "Duplex", "city": "Chennai", "area_sqft": 2400, "estimated_value": 18000000, "loan_linked": false, "acquisition_year": 2015},
+        {"type": "Apartment", "city": "Bangalore", "area_sqft": 1800, "estimated_value": 12000000, "loan_linked": false, "acquisition_year": 2018},
+        {"type": "Plot", "city": "Coimbatore", "area_sqft": 0, "estimated_value": 12000000, "loan_linked": false, "acquisition_year": 2019}
+      ],
+      "equity_portfolio": {
+        "total_value": 11000000,
+        "holdings": [
+          {"name": "Direct equity book", "value": 11000000, "weight_pct": 100}
+        ]
+      },
+      "mutual_funds": {"total_nav": 0, "funds": []},
+      "fixed_deposits": [{"bank": "HDFC", "amount": 3500000, "maturity": "2027-06-30"}],
+      "gold": {"grams": 500, "value": 3400000},
+      "bank_balance_range": "3000000-8000000",
+      "total_assets": 51900000,
+      "total_liabilities": 0,
+      "net_worth": 51900000
+    },
+    {
+      "itr": [
+        {"fy": "2022-23", "income": 4200000, "tax_paid": 620000, "filed": true},
+        {"fy": "2023-24", "income": 4500000, "tax_paid": 680000, "filed": true},
+        {"fy": "2024-25", "income": 4800000, "tax_paid": 720000, "filed": true}
+      ],
+      "business": {
+        "name": "",
+        "cin": "",
+        "type": "",
+        "gstin": "",
+        "gst_status": "not_applicable",
+        "gst_quarterly_turnover": [],
+        "director_in": [],
+        "mca_compliance": "n/a"
+      },
+      "employment_status": "investor"
+    },
+    {
+      "investments": [
+        {"startup": "NovaPay", "stage": "Seed", "amount": 5000000, "date": "2021-04-12", "sector": "Fintech", "current_status": "active"},
+        {"startup": "EcoGrid", "stage": "Series A", "amount": 8000000, "date": "2022-09-01", "sector": "Climate", "current_status": "active"},
+        {"startup": "UrbanHealth", "stage": "Seed", "amount": 6500000, "date": "2023-03-20", "sector": "HealthTech", "current_status": "active"}
+      ],
+      "total_deployed": 19500000,
+      "investment_count": 3,
+      "avg_ticket_size": 6500000,
+      "sectors": ["Fintech", "Climate", "HealthTech"],
+      "trading_volume_monthly": [],
+      "portfolio_churn_rate_pct": 5
+    },
+    {
+      "fit_age_days": 120,
+      "fit_share_count": 8,
+      "active_shares": 2,
+      "endorsements": [],
+      "attestations": [
+        {"type": "KYC", "attester": "Aadhaar eKYC", "date": "2022-01-10", "valid": true},
+        {"type": "CIBIL", "attester": "TransUnion CIBIL", "date": "2026-03-10", "valid": true}
+      ],
+      "access_log_summary": {"total_accesses": 24, "unique_accessors": 5, "last_accessed": "2026-04-29T09:00:00Z"}
+    }
+  ]
+}

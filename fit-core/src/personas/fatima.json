@@ -1,0 +1,88 @@
+{
+  "display_name": "Fatima Sheikh",
+  "layers": [
+    {
+      "pan": "FATIM1234S",
+      "pan_masked": "XXXXX1234S",
+      "aadhaar_hash": "y1y2y3",
+      "dob": "1989-03-22",
+      "full_name": "Fatima Sheikh",
+      "address": {"line1": "Surat textile market", "city": "Surat", "state": "Gujarat", "pincode": "395007"},
+      "kyc_status": "verified",
+      "kyc_verified_by": "Aadhaar eKYC",
+      "kyc_date": "2021-05-18",
+      "nationality": "Indian",
+      "photo_hash": "blake3_fs"
+    },
+    {
+      "cibil_score": 718,
+      "cibil_score_history": [{"month": "2026-04", "score": 718}],
+      "active_loans": [
+        {"type": "Business loan", "lender": "ICICI", "original_amount": 2500000, "outstanding": 2500000, "emi_monthly": 120000, "months_remaining": 22, "status": "active"}
+      ],
+      "closed_loans": [{"type": "Working capital", "lender": "SBI", "original_amount": 1200000, "outstanding": 0}],
+      "total_outstanding": 2500000,
+      "total_emi_monthly": 120000,
+      "credit_cards": [],
+      "overall_credit_utilization_pct": 55,
+      "defaults": 0,
+      "enquiries_last_6m": 1
+    },
+    {
+      "real_estate": [],
+      "equity_portfolio": {"total_value": 0, "holdings": []},
+      "mutual_funds": {"total_nav": 0, "funds": []},
+      "fixed_deposits": [],
+      "gold": {"grams": 80, "value": 560000},
+      "bank_balance_range": "400000-900000",
+      "total_assets": 600000,
+      "total_liabilities": 2500000,
+      "net_worth": -1900000
+    },
+    {
+      "itr": [
+        {"fy": "2022-23", "income": 900000, "tax_paid": 60000, "filed": true},
+        {"fy": "2023-24", "income": 1000000, "tax_paid": 80000, "filed": true},
+        {"fy": "2024-25", "income": 1100000, "tax_paid": 95000, "filed": true}
+      ],
+      "business": {
+        "name": "Sheikh Textiles LLP",
+        "cin": "AAA-1234",
+        "type": "LLP",
+        "incorporation_date": "2021-06-01",
+        "gstin": "24AAAAA0000A1Z5",
+        "gst_status": "active",
+        "gst_quarterly_turnover": [
+          {"quarter": "Q1 FY25", "turnover": 4200000},
+          {"quarter": "Q2 FY25", "turnover": 4500000},
+          {"quarter": "Q3 FY25", "turnover": 4300000},
+          {"quarter": "Q4 FY25", "turnover": 5000000}
+        ],
+        "director_in": ["Sheikh Textiles LLP"],
+        "mca_compliance": "clean",
+        "last_annual_return": "2025-09-30"
+      },
+      "employment_status": "partner"
+    },
+    {
+      "investments": [],
+      "total_deployed": 0,
+      "investment_count": 0,
+      "avg_ticket_size": 0,
+      "sectors": [],
+      "trading_volume_monthly": [],
+      "portfolio_churn_rate_pct": 8
+    },
+    {
+      "fit_age_days": 200,
+      "fit_share_count": 6,
+      "active_shares": 2,
+      "endorsements": [],
+      "attestations": [
+        {"type": "GST", "attester": "GSTN Portal", "date": "2026-04-10", "valid": true},
+        {"type": "ITR", "attester": "Income Tax Portal", "date": "2026-03-28", "valid": true}
+      ],
+      "access_log_summary": {"total_accesses": 15, "unique_accessors": 4, "last_accessed": "2026-04-27T11:20:00Z"}
+    }
+  ]
+}
