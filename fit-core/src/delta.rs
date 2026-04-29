@@ -30,5 +30,6 @@ pub struct FitDelta {
     pub patch: Vec<u8>,
     pub attester: AttesterType,
     pub attester_pubkey: [u8; 32],
+    #[serde(with = "serde_big_array::BigArray")]
     pub signature: [u8; 64],
 }

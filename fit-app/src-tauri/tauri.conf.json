@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.tauri.app/config/2/stable",
+  "$schema": "https://schema.tauri.app/config/2",
   "productName": "FIT",
   "version": "0.1.0",
   "identifier": "fit.hackathon.desktop",
@@ -13,8 +13,7 @@
         "title": "FIT",
         "width": 1280,
         "height": 800,
-        "resizable": true,
-        "capabilities": ["default"]
+        "resizable": true
       }
     ],
     "withGlobalTauri": true
@@ -22,6 +21,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": []
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
   }
 }

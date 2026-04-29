@@ -54,8 +54,12 @@ enum Cmd {
         layer: u8,
         #[arg(long)]
         summary: String,
-        #[arg(long)]
-        patch_json: String,
+        /// Inline JSON patch (may need careful shell escaping)
+        #[arg(long, required_unless_present = "patch_file")]
+        patch_json: Option<String>,
+        /// Path to a file containing the JSON patch array
+        #[arg(long, required_unless_present = "patch_json")]
+        patch_file: Option<String>,
         #[arg(long, default_value = "owner")]
         attester: String,
     },
@@ -67,7 +71,7 @@ enum Cmd {
         layers: String,
         #[arg(long)]
         recipient: String,
-        #[arg(long, default_value_t = true)]
+        #[arg(long, default_value_t = true, num_args = 0..=1, default_missing_value = "true", value_parser = clap::builder::BoolishValueParser::new())]
         live_tracking: bool,
         /// UNIX epoch (`...`) OR RFC3339; omit with `--expires-days`
         #[arg(long)]
@@ -93,7 +97,7 @@ fn load_keys(path: &str) -> Result<StoredKeys> {
 }
 
 fn short_fit_id(fit_id_bytes: &[u8; 16]) -> String {
-    hex::encode(&fit_id[..6])
+    hex::encode(&fit_id_bytes[..6])
 }
 
 fn hex_to_32(hex_s: &str) -> Result<[u8; 32]> {
@@ -213,6 +217,7 @@ fn main() -> Result<()> {
             layer,
             summary,
             patch_json,
+            patch_file,
             attester,
         } => {
             let ks = load_keys(&keys)?;
@@ -222,7 +227,12 @@ fn main() -> Result<()> {
             let master = hex_to_32(&master_hex)?;
             let seed = hex_to_32(&ks.ed25519_signing_seed_hex)?;
             let sk = SigningKey::from_bytes(&seed);
-            let patch: Patch = serde_json::from_str(&patch_json).context("patch JSON")?;
+            let patch_str = match (patch_json, patch_file) {
+                (Some(j), _) => j,
+                (_, Some(f)) => fs::read_to_string(&f).with_context(|| format!("read {f}"))?,
+                _ => anyhow::bail!("provide --patch-json or --patch-file"),
+            };
+            let patch: Patch = serde_json::from_str(&patch_str).context("patch JSON")?;
             let raw = fs::read(&fit)?;
             let out = apply_json_patch_delta(
                 &raw,
