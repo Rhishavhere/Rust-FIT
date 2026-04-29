@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Local FIT dashboard backend",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "dialog:default"]
 }
