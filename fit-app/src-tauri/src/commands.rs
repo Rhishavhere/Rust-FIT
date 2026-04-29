@@ -2,11 +2,17 @@
 
 use ed25519_dalek::SigningKey;
 use fit_core::delta::AttesterType;
+use fit_core::delta::FitDelta;
 use fit_core::{
     apply_json_patch_delta, create_share_envelope, materialize_fit, open_share_envelope,
     parse_fit, verify_signature,
 };
 use serde::Serialize;
+
+#[tauri::command]
+pub fn fit_read_utf8(path: String) -> Result<String, String> {
+    std::fs::read_to_string(&path).map_err(map_err)
+}
 
 fn map_err<E: std::fmt::Display>(e: E) -> String {
     e.to_string()
@@ -17,6 +23,33 @@ fn hex_to_32(hex_s: &str) -> Result<[u8; 32], String> {
         hex::decode(hex_s.trim_start_matches("0x")).map_err(|e| format!("hex decode: {e}"))?;
     raw.try_into()
         .map_err(|_| "expected 32 bytes (64 hex chars)".to_string())
+}
+
+#[derive(Serialize)]
+pub struct DeltaSummary {
+    pub delta_id: u32,
+    pub summary: String,
+    pub timestamp: i64,
+    pub layer_affected: u8,
+}
+
+#[tauri::command]
+pub fn fit_delta_summaries(file_path: String) -> Result<Vec<DeltaSummary>, String> {
+    let raw = std::fs::read(&file_path).map_err(map_err)?;
+    let parsed = parse_fit(&raw).map_err(map_err)?;
+    Ok(summarize_deltas(parsed.deltas))
+}
+
+fn summarize_deltas(deltas: Vec<FitDelta>) -> Vec<DeltaSummary> {
+    deltas
+        .into_iter()
+        .map(|d| DeltaSummary {
+            delta_id: d.delta_id,
+            summary: d.summary,
+            timestamp: d.timestamp,
+            layer_affected: d.layer_affected,
+        })
+        .collect()
 }
 
 #[derive(Serialize)]
