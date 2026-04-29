@@ -125,6 +125,7 @@ fn verify_envelope_sig(env: &FitShareEnvelope, sig: &[u8; 64]) -> FitResult<()> 
 #[derive(Serialize, Deserialize)]
 pub struct StoredShareOuter {
     pub env: FitShareEnvelope,
+    #[serde(with = "serde_big_array::BigArray")]
     pub owner_sig: [u8; 64],
 }
 
@@ -198,7 +199,7 @@ pub fn create_share_envelope(
     let blen = body.len() as u32;
     out.extend_from_slice(&blen.to_le_bytes());
     out.extend_from_slice(&body);
-    out.extend_from_slice(crate::crypto::EOF_MARKER);
+    out.extend_from_slice(&crate::crypto::EOF_MARKER);
     Ok(out)
 }
 

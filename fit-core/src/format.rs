@@ -57,10 +57,9 @@ pub fn serialize_fit(blob: ParsedFitBlob) -> FitResult<Vec<u8>> {
         deltas,
         owner_signature,
     } = blob;
-    let opts = bincode_opts();
     let mut out = Vec::new();
     out.extend_from_slice(&FIT_MAGIC);
-    let hdr_bytes = opts.serialize(&header).map_err(|e| FitCoreError::Encode(e.to_string()))?;
+    let hdr_bytes = bincode_opts().serialize(&header).map_err(|e| FitCoreError::Encode(e.to_string()))?;
     let hl = hdr_bytes.len() as u32;
     out.extend_from_slice(&hl.to_le_bytes());
     out.extend_from_slice(&hdr_bytes);
@@ -76,7 +75,7 @@ pub fn serialize_fit(blob: ParsedFitBlob) -> FitResult<Vec<u8>> {
     }
     out.push(layers.len() as u8);
     for layer in &layers {
-        let lyr = opts
+        let lyr = bincode_opts()
             .serialize(layer)
             .map_err(|e| FitCoreError::Encode(e.to_string()))?;
         let pl = lyr.len() as u32;
@@ -86,7 +85,7 @@ pub fn serialize_fit(blob: ParsedFitBlob) -> FitResult<Vec<u8>> {
     let dc = deltas.len() as u32;
     out.extend_from_slice(&dc.to_le_bytes());
     for delta in &deltas {
-        let delta_bytes = opts
+        let delta_bytes = bincode_opts()
             .serialize(delta)
             .map_err(|e| FitCoreError::Encode(e.to_string()))?;
         let dl = delta_bytes.len() as u32;
@@ -106,11 +105,10 @@ pub fn parse_fit(raw: &[u8]) -> FitResult<ParsedFitFile> {
     if raw[0..4] != FIT_MAGIC {
         return Err(FitCoreError::InvalidMagic);
     }
-    let opts = bincode_opts();
     let mut off = 4;
     let hl = u32::from_le_bytes(raw[off..off + 4].try_into().unwrap()) as usize;
     off += 4;
-    let header: FitHeader = opts
+    let header: FitHeader = bincode_opts()
         .deserialize(&raw[off..off + hl])
         .map_err(|e| FitCoreError::Decode(e.to_string()))?;
     off += hl;
@@ -128,7 +126,7 @@ pub fn parse_fit(raw: &[u8]) -> FitResult<ParsedFitFile> {
         }
         let ll = u32::from_le_bytes(raw[off..off + 4].try_into().unwrap()) as usize;
         off += 4;
-        let layer: EncryptedLayer = opts
+        let layer: EncryptedLayer = bincode_opts()
             .deserialize(&raw[off..off + ll])
             .map_err(|e| FitCoreError::Decode(e.to_string()))?;
         off += ll;
@@ -146,7 +144,7 @@ pub fn parse_fit(raw: &[u8]) -> FitResult<ParsedFitFile> {
         }
         let dl = u32::from_le_bytes(raw[off..off + 4].try_into().unwrap()) as usize;
         off += 4;
-        let delta: FitDelta = opts
+        let delta: FitDelta = bincode_opts()
             .deserialize(&raw[off..off + dl])
             .map_err(|e| FitCoreError::Decode(e.to_string()))?;
         off += dl;
