@@ -55,6 +55,8 @@ fn summarize_deltas(deltas: Vec<FitDelta>) -> Vec<DeltaSummary> {
 #[derive(Serialize)]
 pub struct InspectResult {
     pub fit_id_short: String,
+    /// Full UUID bytes as hex — WebSocket relay `fit_id` matches this string.
+    pub fit_id_hex: String,
     pub display_name: String,
     pub fit_score: u16,
     pub layer_count: usize,
@@ -69,6 +71,7 @@ pub fn fit_inspect(file_path: String) -> Result<InspectResult, String> {
     let h = &p.header;
     Ok(InspectResult {
         fit_id_short: hex::encode(&h.fit_id[..6]),
+        fit_id_hex: hex::encode(h.fit_id),
         display_name: h.display_name.clone(),
         fit_score: h.fit_score,
         layer_count: p.layers.len(),
@@ -109,6 +112,8 @@ pub fn fit_materialize_owner(
 pub struct MaterializedShare {
     pub layers: serde_json::Map<String, serde_json::Value>,
     pub source_fit_id_short: String,
+    /// Full hex of source FIT UUID — relay `SUBSCRIBE` MUST use this (same key as owner's `fit_id_hex`).
+    pub source_fit_id_hex: String,
     pub permitted_layers: Vec<u8>,
     pub expires_at: i64,
     pub live_tracking: bool,
@@ -130,6 +135,7 @@ pub fn fit_open_share(
     Ok(MaterializedShare {
         layers: map,
         source_fit_id_short: hex::encode(&env.source_fit_id[..6]),
+        source_fit_id_hex: hex::encode(env.source_fit_id),
         permitted_layers: env.permitted_layers.clone(),
         expires_at: env.expires_at,
         live_tracking: env.live_tracking,

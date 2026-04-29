@@ -5,17 +5,25 @@ export default {
     extend: {
       colors: {
         fit: {
-          bg: "#12141c",
-          card: "#1a1d28",
-          border: "#2a3040",
-          accent: "#22c55e",
+          bg: "#0c0d10",
+          panel: "#12141a",
+          card: "#15171e",
+          border: "#242833",
+          ink: "#0a0b0e",
           muted: "#8b929e",
-          highlight: "#0d4a2b",
+          accent: "#a3ff33",
+          accentDim: "#7bc819",
+          highlight: "#1a2615",
+          glow: "rgba(163, 255, 51, 0.35)",
         },
       },
       fontFamily: {
-        sans: ["system-ui", "Segoe UI", "Roboto", "sans-serif"],
-        mono: ["ui-monospace", "Cascadia Code", "monospace"],
+        sans: ["'Segoe UI'", "system-ui", "Roboto", "sans-serif"],
+        mono: ["ui-monospace", "Consolas", "monospace"],
+      },
+      boxShadow: {
+        neon: "0 0 24px rgba(163, 255, 51, 0.12), inset 0 1px 0 rgba(163,255,51,0.08)",
+        card: "0 4px 24px rgba(0, 0, 0, 0.35)",
       },
     },
   },

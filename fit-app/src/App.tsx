@@ -1,16 +1,14 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 
-import {
-  AssetDonut,
-  CreditTrendLine,
-  IncomeBarChart,
-  LockedCard,
-  PortfolioTable,
-} from "./components/DashboardCharts";
+import { FitDashboard } from "./components/FitDashboard";
+import { RightColumnRails } from "./components/RightColumnRails";
+import { Sidebar } from "./components/Sidebar";
+import { TopBar } from "./components/TopBar";
+import { useRecipientRelay } from "./hooks/useFitRelay";
 import { DEMO_PATCHES } from "./lib/demoPatches";
-import type { DeltaRow, InspectInfo, LayersMap, StoredKeys } from "./lib/fitTypes";
-import { badgeText, formatInr, isoDate } from "./lib/fmt";
+import type { DeltaRow, InspectInfo, LayersMap, ShareMeta, StoredKeys } from "./lib/fitTypes";
+import { closeRelayOwner, relayPushDelta, RELAY_WS_URL } from "./lib/relay";
 import {
   fitApplyDelta,
   fitCreateShare,
@@ -38,38 +36,7 @@ function getIdentityName(layers: LayersMap): string {
     const n = (l1 as { full_name?: string }).full_name;
     if (typeof n === "string" && n) return n;
   }
-  return "Identity";
-}
-
-function fourthStatSubtitle(layers: LayersMap): string {
-  const l4 = layers["layer4"] as Record<string, unknown> | undefined;
-  const l5 = layers["layer5"] as Record<string, unknown> | undefined;
-  if (l4 && typeof l4 === "object") {
-    const b = l4.business as Record<string, unknown> | undefined;
-    if (b && typeof b.name === "string") return "Active business";
-  }
-  if (l5 && typeof l5.investment_count === "number") return "Angel investments";
-  return "Portfolio signal";
-}
-
-function fourthStatValue(layers: LayersMap): string {
-  const l4 = layers["layer4"] as Record<string, unknown> | undefined;
-  const l5 = layers["layer5"] as Record<string, unknown> | undefined;
-  if (l4 && typeof l4 === "object") {
-    const b = l4.business as Record<string, unknown> | undefined;
-    if (b && typeof b.name === "string") return String(b.name).slice(0, 28);
-  }
-  if (l5 && typeof l5.investment_count === "number") return String(l5.investment_count);
-  return "—";
-}
-
-function layerPermitted(
-  mode: UiMode,
-  id: number,
-  permitted: number[] | undefined
-): boolean {
-  if (mode === "owner") return true;
-  return permitted?.includes(id) ?? false;
+  return "Guy Hawkins archetype";
 }
 
 export default function App() {
@@ -79,12 +46,7 @@ export default function App() {
   const [inspect, setInspect] = useState<InspectInfo | null>(null);
   const [layers, setLayers] = useState<LayersMap>({});
   const [deltas, setDeltas] = useState<DeltaRow[]>([]);
-  const [shareMeta, setShareMeta] = useState<{
-    source_fit_id_short: string;
-    permitted_layers: number[];
-    expires_at: number;
-    live_tracking: boolean;
-  } | null>(null);
+  const [shareMeta, setShareMeta] = useState<ShareMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [verifyOk, setVerifyOk] = useState<boolean | null>(null);
@@ -94,61 +56,74 @@ export default function App() {
   const [expiresDays, setExpiresDays] = useState(30);
   const [liveTracking, setLiveTracking] = useState(true);
 
-  const displayName = useMemo(() => getIdentityName(layers), [layers]);
-  const l2 = layers["layer2"];
-  const l3 = layers["layer3"];
-  const l4 = layers["layer4"];
+  const personaName = useMemo(() => getIdentityName(layers), [layers]);
+  const idShort =
+    mode === "owner"
+      ? inspect?.fit_id_short
+      : shareMeta?.source_fit_id_short ?? inspect?.fit_id_short;
 
-  const permitted = shareMeta?.permitted_layers;
-
-  const refreshDashboard = useCallback(
-    async (path: string | null, m: UiMode, keys: StoredKeys | null) => {
-      if (!path || !keys) return;
-      setBusy("Loading FIT…");
-      setError(null);
-      try {
-        if (m === "owner") {
-          const ms = keys.master_secret_hex;
-          if (!ms) throw new Error("Owner keys must include master_secret_hex (from `fit generate`).");
-          const [ins, mat, drows] = await Promise.all([
-            fitInspect(path),
-            fitMaterializeOwner(path, ms),
-            fitDeltaSummaries(path),
-          ]);
-          setInspect(ins);
-          setLayers(mat.layers as LayersMap);
-          setDeltas(drows);
-          try {
-            await fitVerify(path);
-            setVerifyOk(true);
-          } catch {
-            setVerifyOk(false);
-          }
-          setShareMeta(null);
-        } else {
-          const x = keys.x25519_static_secret_hex;
-          const res = await fitOpenShare(path, x);
-          setInspect(null);
-          setLayers(res.layers as LayersMap);
-          setShareMeta({
-            source_fit_id_short: res.source_fit_id_short,
-            permitted_layers: res.permitted_layers,
-            expires_at: res.expires_at,
-            live_tracking: res.live_tracking,
-          });
-          setDeltas([]);
-          setVerifyOk(null);
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setBusy(null);
-      }
-    },
-    []
+  const recipientRelayOn =
+    mode === "recipient" && shareMeta?.live_tracking === true && Boolean(shareMeta?.source_fit_id_hex);
+  const { events: relayInbound, status: relayRecipientStatus } = useRecipientRelay(
+    recipientRelayOn,
+    shareMeta?.source_fit_id_hex ?? null,
+    RELAY_WS_URL
   );
 
+  const relayHint = useMemo(() => {
+    if (mode === "idle") return undefined;
+    if (mode === "owner") return `Relay push → ${RELAY_WS_URL}`;
+    if (!shareMeta?.live_tracking) return "Relay: envelope has no live tracking";
+    return `Relay ${relayRecipientStatus} ← ${RELAY_WS_URL}`;
+  }, [mode, shareMeta?.live_tracking, relayRecipientStatus]);
+
+  const refreshDashboard = useCallback(async (path: string | null, m: UiMode, keys: StoredKeys | null) => {
+    if (!path || !keys) return;
+    setBusy("Loading FIT…");
+    setError(null);
+    try {
+      if (m === "owner") {
+        const ms = keys.master_secret_hex;
+        if (!ms) throw new Error("Owner keys must include master_secret_hex (from `fit generate`).");
+        const [ins, mat, drows] = await Promise.all([
+          fitInspect(path),
+          fitMaterializeOwner(path, ms),
+          fitDeltaSummaries(path),
+        ]);
+        setInspect(ins);
+        setLayers(mat.layers as LayersMap);
+        setDeltas(drows);
+        try {
+          await fitVerify(path);
+          setVerifyOk(true);
+        } catch {
+          setVerifyOk(false);
+        }
+        setShareMeta(null);
+      } else {
+        const x = keys.x25519_static_secret_hex;
+        const res = await fitOpenShare(path, x);
+        setInspect(null);
+        setLayers(res.layers as LayersMap);
+        setShareMeta({
+          source_fit_id_short: res.source_fit_id_short,
+          source_fit_id_hex: res.source_fit_id_hex,
+          permitted_layers: res.permitted_layers,
+          expires_at: res.expires_at,
+          live_tracking: res.live_tracking,
+        });
+        setDeltas([]);
+        setVerifyOk(null);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  }, []);
+
   const reset = () => {
+    closeRelayOwner();
     setMode("idle");
     setFitPath(null);
     setKeysJson(null);
@@ -162,18 +137,14 @@ export default function App() {
   };
 
   const chooseOwnerFit = async () => {
-    const p = await open({
-      filters: [{ name: "FIT binary", extensions: ["fit"] }],
-    });
+    const p = await open({ filters: [{ name: "FIT binary", extensions: ["fit"] }] });
     const path = typeof p === "string" ? p : p?.[0] ?? null;
     if (!path) return;
     setFitPath(path);
   };
 
   const chooseKeys = async () => {
-    const p = await open({
-      filters: [{ name: "FIT keys", extensions: ["json"] }],
-    });
+    const p = await open({ filters: [{ name: "FIT keys", extensions: ["json"] }] });
     const path = typeof p === "string" ? p : p?.[0] ?? null;
     if (!path) return;
     setError(null);
@@ -186,9 +157,7 @@ export default function App() {
   };
 
   const chooseShareFile = async () => {
-    const p = await open({
-      filters: [{ name: "FIT share", extensions: ["fitshare"] }],
-    });
+    const p = await open({ filters: [{ name: "FIT share", extensions: ["fitshare"] }] });
     const path = typeof p === "string" ? p : p?.[0] ?? null;
     if (!path) return;
     setFitPath(path);
@@ -206,44 +175,43 @@ export default function App() {
     await refreshDashboard(fitPath, "recipient", keysJson);
   };
 
-  const cibil =
-    l2 && typeof l2 === "object" && typeof (l2 as { cibil_score?: number }).cibil_score === "number"
-      ? (l2 as { cibil_score: number }).cibil_score
-      : null;
-  const netWorth =
-    l3 && typeof l3 === "object" && typeof (l3 as { net_worth?: number }).net_worth === "number"
-      ? (l3 as { net_worth: number }).net_worth
-      : null;
-
-  const applyDemo = async (
-    key: keyof typeof DEMO_PATCHES,
-    layerId: number,
-    summary: string,
-    attester: string
-  ) => {
-    if (mode !== "owner" || !fitPath || !keysJson?.master_secret_hex) return;
-    setBusy(summary);
-    setError(null);
-    try {
-      await fitApplyDelta({
-        filePath: fitPath,
-        masterSecretHex: keysJson.master_secret_hex,
-        ed25519SeedHex: keysJson.ed25519_signing_seed_hex,
-        layerId,
-        patchJson: DEMO_PATCHES[key],
-        summary,
-        attester,
-      });
-      await refreshDashboard(fitPath, "owner", keysJson);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(null);
-    }
-  };
+  const onDemoDelta = useCallback(
+    async (key: keyof typeof DEMO_PATCHES, layerId: number, summary: string, attester: string) => {
+      if (!fitPath || !keysJson?.master_secret_hex) return;
+      setBusy(summary);
+      setError(null);
+      try {
+        await fitApplyDelta({
+          filePath: fitPath,
+          masterSecretHex: keysJson.master_secret_hex,
+          ed25519SeedHex: keysJson.ed25519_signing_seed_hex,
+          layerId,
+          patchJson: DEMO_PATCHES[key],
+          summary,
+          attester,
+        });
+        await refreshDashboard(fitPath, "owner", keysJson);
+        try {
+          const ins = await fitInspect(fitPath);
+          await relayPushDelta(RELAY_WS_URL, ins.fit_id_hex, {
+            summary,
+            layer_affected: layerId,
+            attester,
+          });
+        } catch (re) {
+          console.warn("[FIT relay] PUSH_DELTA failed — is python fit-relay running?", re);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [fitPath, keysJson, refreshDashboard]
+  );
 
   const exportShare = async () => {
-    if (mode !== "owner" || !fitPath || !keysJson?.master_secret_hex || !recipientPub.trim()) {
+    if (!fitPath || !keysJson?.master_secret_hex || !recipientPub.trim()) {
       setError("Recipient X25519 pubkey (hex, 64 chars) is required.");
       return;
     }
@@ -275,363 +243,200 @@ export default function App() {
     }
   };
 
-  const fitScore = inspect?.fit_score;
-
   return (
-    <div className="min-h-full">
-      <header className="border-b border-fit-border bg-fit-card/80 px-8 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-white">Financial Identity Token</h1>
-            <p className="text-sm text-fit-muted">
-              Desktop dashboard — open a <code className="text-emerald-400/90">.fit</code> or{" "}
-              <code className="text-emerald-400/90">.fitshare</code> with matching keys.
-            </p>
-          </div>
-          {mode !== "idle" && (
-            <button
-              type="button"
-              className="rounded-lg border border-fit-border px-4 py-2 text-sm text-slate-300 hover:bg-fit-highlight/30"
-              onClick={reset}
-            >
-              Reset
-            </button>
-          )}
-        </div>
-      </header>
+    <div className="flex min-h-full font-sans">
+      <Sidebar personaName={personaName} mode={mode} />
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        {mode === "idle" && (
-          <section className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-fit-border bg-fit-card p-6">
-              <h2 className="text-lg font-medium text-white">Owner — full FIT</h2>
-              <p className="mt-2 text-sm leading-relaxed text-fit-muted">
-                Generate with{" "}
-                <code className="text-xs text-emerald-300/90">cargo run -p fit-cli -- generate --persona priya -o priya.fit -k priya.keys.json</code>
-                , then load the <code className="text-xs">.fit</code> and <code className="text-xs">.keys.json</code> here.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-black hover:bg-emerald-500"
-                  onClick={chooseOwnerFit}
-                >
-                  Choose .fit file
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-fit-border px-4 py-2.5 text-sm text-slate-200 hover:bg-fit-highlight/30"
-                  onClick={chooseKeys}
-                >
-                  Choose keys.json
-                </button>
+      <div className="flex min-h-full min-w-0 flex-1 flex-col">
+        <TopBar
+          breadcrumbRight={idShort ? `ID ${String(idShort).slice(0, 12)}…` : undefined}
+          onReset={mode !== "idle" ? reset : undefined}
+          busy={busy}
+          relayHint={relayHint}
+        />
+
+        <div className="flex min-h-0 flex-1">
+          <div className="min-h-0 min-w-0 flex-1">
+            {error ? (
+              <div className="mx-8 mt-4 rounded-lg border border-red-900/50 bg-red-950/35 px-4 py-3 text-sm text-red-100">
+                {error}
               </div>
-              <p className="mt-4 font-mono text-xs text-fit-muted">{fitPath ?? "No .fit selected"}</p>
-              <p className="font-mono text-xs text-fit-muted">
-                Keys: {keysJson ? `${keysJson.ed25519_signing_seed_hex.slice(0, 10)}…` : "(none)"}
-              </p>
-              <button
-                type="button"
-                disabled={!fitPath || !keysJson?.master_secret_hex}
-                className="mt-6 w-full rounded-lg bg-emerald-500/90 py-3 text-sm font-semibold text-black disabled:opacity-40"
-                onClick={loadOwner}
-              >
-                Load owner dashboard
-              </button>
-            </div>
+            ) : null}
 
-            <div className="rounded-2xl border border-fit-border bg-fit-card p-6">
-              <h2 className="text-lg font-medium text-white">Recipient — share envelope</h2>
-              <p className="mt-2 text-sm text-fit-muted">
-                Open a <code className="text-xs text-emerald-300/90">.fitshare</code> saved by the owner (
-                <code className="text-xs">fit share …</code> or the exporter below).
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-black hover:bg-emerald-500"
-                  onClick={chooseShareFile}
-                >
-                  Choose .fitshare
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg border border-fit-border px-4 py-2.5 text-sm text-slate-200 hover:bg-fit-highlight/30"
-                  onClick={chooseKeys}
-                >
-                  Recipient keys.json (X25519 decrypt)
-                </button>
-              </div>
-              <button
-                type="button"
-                disabled={!fitPath || !keysJson}
-                className="mt-8 w-full rounded-lg border border-fit-border py-3 text-sm font-medium text-emerald-200 hover:bg-fit-highlight/40 disabled:opacity-40"
-                onClick={loadRecipient}
-              >
-                Load investor view
-              </button>
-            </div>
-          </section>
-        )}
-
-        {error && (
-          <div className="mb-6 rounded-lg border border-red-900/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-            {error}
-          </div>
-        )}
-        {(busy ?? null) && (
-          <p className="mb-6 text-sm text-emerald-200/90">{busy}…</p>
-        )}
-
-        {(mode === "owner" || mode === "recipient") && (
-          <>
-            {/* Hero */}
-            <section className="mb-8 overflow-hidden rounded-2xl border border-fit-border bg-gradient-to-br from-fit-card via-fit-card to-fit-highlight/60 p-8">
-              <div className="flex flex-wrap items-start justify-between gap-6">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-fit-muted">
-                    FIT ID ·{" "}
-                    {mode === "owner" ? badgeText(inspect?.fit_id_short ?? "") : badgeText(shareMeta?.source_fit_id_short ?? "")}
+            {mode === "idle" ? (
+              <main className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-14">
+                <div className="rounded-xl border border-fit-border/60 bg-fit-ink/30 px-5 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fit-accent/90">
+                    Two ways to change the token
                   </p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">
-                    {displayName}
-                  </h2>
-                  <p className="mt-3 text-sm text-fit-muted">
-                    {mode === "owner"
-                      ? `Last deltas: ${inspect?.delta_count ?? 0}`
-                      : `Share expiry: ${shareMeta ? isoDate(shareMeta.expires_at) : "—"} · tracking ${shareMeta?.live_tracking ? "on" : "off"}`}
-                  </p>
-                  {mode === "owner" && verifyOk !== null && (
-                    <p className="mt-2 text-xs text-fit-muted">
-                      Merkle signature: {verifyOk ? "✓ verified" : "✗ failed"}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-xs uppercase text-fit-muted">FIT score</p>
-                  <p className="text-5xl font-bold tabular-nums text-emerald-400">
-                    {fitScore != null ? fitScore : "—"}
-                  </p>
-                  {mode === "recipient" && (
-                    <p className="mt-2 max-w-xs text-xs text-fit-muted">
-                      Headline score is stored in the full <code>.fit</code> header; share envelopes carry permitted layers only.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Stat cards */}
-            <section className="mb-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <StatCard
-                label="Net worth"
-                value={layerPermitted(mode, 3, permitted) && netWorth != null ? formatInr(netWorth) : "—"}
-                sub={layerPermitted(mode, 3, permitted) ? "Layer 3" : "Locked"}
-              />
-              <StatCard label="FIT score" value={fitScore != null ? String(fitScore) : "—"} sub="Public header / owner full file" />
-              <StatCard
-                label="CIBIL score"
-                value={
-                  layerPermitted(mode, 2, permitted) && cibil != null ? String(cibil) : "—"
-                }
-                sub={layerPermitted(mode, 2, permitted) ? "Layer 2 — credit" : "Locked"}
-              />
-              <StatCard
-                label={fourthStatSubtitle(layers)}
-                value={fourthStatValue(layers)}
-                sub="Layer 4 · 5"
-              />
-            </section>
-
-            {mode === "owner" && (
-              <section className="mb-10 rounded-xl border border-fit-border bg-fit-highlight/35 p-4">
-                <h3 className="text-sm font-medium text-emerald-200/90">Demo triggers (Δ + signed delta log)</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <MiniTrigger
-                    label="Sell Reliance"
-                    disabled={busy != null || !layers["layer3"]}
-                    onClick={() => applyDemo("sellReliance", 3, "Sold slice of Reliance (demo)", "owner")}
-                  />
-                  <MiniTrigger
-                    label="Open FD ₹2L"
-                    disabled={busy != null || !layers["layer3"]}
-                    onClick={() => applyDemo("openFd200k", 3, "Opened new FD ₹2L", "bankaa")}
-                  />
-                  <MiniTrigger
-                    label="Refresh CIBIL"
-                    disabled={busy != null || !layers["layer2"]}
-                    onClick={() => applyDemo("refreshCibil", 2, "CIBIL refresh (demo uplink)", "cibil")}
-                  />
-                  <MiniTrigger
-                    label="GST Q1 FY26"
-                    disabled={busy != null || !layers["layer4"]}
-                    onClick={() =>
-                      applyDemo("fileGstQ1", 4, "Filed GST Q1 FY26 turnover line", "gstn")
-                    }
-                  />
-                  <MiniTrigger
-                    label="New angel cheque"
-                    disabled={busy != null || !layers["layer5"]}
-                    onClick={() =>
-                      applyDemo("newAngel", 5, "Angel ticket — GreenGrid (demo)", "owner")
-                    }
-                  />
-                </div>
-              </section>
-            )}
-
-            {mode === "owner" && inspect && keysJson?.master_secret_hex && (
-              <section className="mb-10 rounded-xl border border-fit-border bg-fit-card/80 p-5">
-                <h3 className="text-base font-medium text-white">Share FIT (Envelope)</h3>
-                <p className="mt-2 text-xs text-fit-muted">
-                  Paste investor <strong>X25519</strong> public key hex (see <code>fit keygen</code>). Layers CSV e.g.
-                  <code className="ml-1">2,3</code>.
-                </p>
-                <div className="mt-4 flex flex-wrap items-end gap-3">
-                  <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-xs text-fit-muted">
-                    Recipient pubkey (hex)
-                    <input
-                      className="rounded border border-fit-border bg-fit-bg px-3 py-2 font-mono text-sm text-emerald-100"
-                      value={recipientPub}
-                      onChange={(e) => setRecipientPub(e.target.value)}
-                      spellCheck={false}
-                      placeholder="64 hex chars"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-fit-muted">
-                    Layers
-                    <input
-                      className="w-24 rounded border border-fit-border bg-fit-bg px-2 py-2 font-mono text-sm"
-                      value={shareLayers}
-                      onChange={(e) => setShareLayers(e.target.value)}
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-fit-muted">
-                    Expiry (days)
-                    <input
-                      type="number"
-                      className="w-24 rounded border border-fit-border bg-fit-bg px-2 py-2 text-sm"
-                      value={expiresDays}
-                      onChange={(e) => setExpiresDays(Number(e.target.value))}
-                    />
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={liveTracking}
-                      onChange={(e) => setLiveTracking(e.target.checked)}
-                    />
-                    Live tracking
-                  </label>
-                  <button
-                    type="button"
-                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-black hover:bg-emerald-500"
-                    onClick={exportShare}
-                  >
-                    Export .fitshare
-                  </button>
-                </div>
-              </section>
-            )}
-
-            <div className="grid gap-8 xl:grid-cols-3">
-              <div className="space-y-8 xl:col-span-2">
-                {layerPermitted(mode, 3, permitted) ? (
-                  <AssetDonut layer3={l3} />
-                ) : (
-                  <LockedCard layerId={3} title="Assets" />
-                )}
-                <div className="grid gap-8 md:grid-cols-2">
-                  {layerPermitted(mode, 2, permitted) ? (
-                    <CreditTrendLine layer2={l2} />
-                  ) : (
-                    <LockedCard layerId={2} title="Credit & trust" />
-                  )}
-                  {layerPermitted(mode, 4, permitted) ? (
-                    <IncomeBarChart layer4={l4} />
-                  ) : (
-                    <LockedCard layerId={4} title="Business & income" />
-                  )}
-                </div>
-                {layerPermitted(mode, 3, permitted) ? (
-                  <PortfolioTable layer3={l3} />
-                ) : (
-                  <LockedCard layerId={3} title="Portfolio table" />
-                )}
-              </div>
-
-              <div className="space-y-8">
-                <div className="rounded-xl border border-fit-border bg-fit-card p-4">
-                  <h3 className="text-sm font-medium text-slate-200">Delta feed</h3>
-                  <ul className="mt-3 max-h-[420px] space-y-2 overflow-auto text-xs">
-                    {deltas.length === 0 ? (
-                      <li className="text-fit-muted">No signed deltas yet.</li>
-                    ) : (
-                      [...deltas].reverse().map((d) => (
-                        <li key={d.delta_id} className="rounded border border-fit-border/70 bg-fit-bg/60 px-3 py-2">
-                          <span className="text-emerald-400/95">#{d.delta_id}</span>{" "}
-                          <span className="text-fit-muted">Layer {d.layer_affected}</span>
-                          <p className="mt-1 text-slate-300">{d.summary}</p>
-                          <p className="mt-1 text-fit-muted">{isoDate(d.timestamp)}</p>
-                        </li>
-                      ))
-                    )}
+                  <ul className="mt-3 list-inside list-disc space-y-2 text-sm leading-relaxed text-fit-muted">
+                    <li>
+                      <span className="text-white/90">In this app</span> — load your <code className="text-fit-accent">.fit</code>{" "}
+                      and keys, run the demo delta buttons (JSON patches ship in the binary), export{" "}
+                      <code className="text-fit-accent">.fitshare</code>, optional WebSocket relay for live envelopes.
+                    </li>
+                    <li>
+                      <span className="text-white/90">In a terminal</span> — from the repo root, use{" "}
+                      <code className="text-fit-accent/90">fit-cli</code> for the same cryptography: generate,{" "}
+                      <code className="text-white/70">apply-delta</code> with a <strong className="text-white/85">patch file</strong>{" "}
+                      (recommended), <code className="text-white/70">verify</code>, <code className="text-white/70">share</code>.
+                      After you open the owner cockpit, expand <strong className="text-white/85">Manual changes</strong> for
+                      copy-ready commands tied to your file path.
+                    </li>
                   </ul>
                 </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <LandingCard title="Owner — full-plane FIT">
+                    <p className="text-xs leading-relaxed text-fit-muted">
+                      Create a genesis token and keys (run once from the repo):
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-fit-muted">
+                      <code className="break-all text-fit-accent">
+                        cargo run -p fit-cli -- generate --persona priya -o priya.fit -k priya.keys.json
+                      </code>
+                    </p>
+                    <LaunchRow label=".fit token" hint={fitPath ?? "unset"} />
+                    <div className="mt-6 flex gap-3">
+                      <GhostBtn onClick={chooseOwnerFit}>Pick .fit</GhostBtn>
+                      <GhostBtn onClick={chooseKeys}>Keys JSON</GhostBtn>
+                    </div>
+                    <PrimaryBtn className="mt-8" disabled={!fitPath || !keysJson?.master_secret_hex} onClick={loadOwner}>
+                      Enter owner cockpit
+                    </PrimaryBtn>
+                  </LandingCard>
 
-                <div className="rounded-xl border border-fit-border bg-fit-card/80 p-4 text-xs leading-relaxed text-fit-muted">
-                  <strong className="text-slate-400">Held layers</strong>
-                  <p className="mt-2">
-                    {mode === "owner"
-                      ? "Layers 1–6 decrypted locally with your master secret."
-                      : permitted?.join(", ") ?? "(see envelope metadata)"}
-                  </p>
+                  <LandingCard title="Investor envelope">
+                    <p className="text-xs leading-relaxed text-fit-muted">
+                      Recipient decrypt opens selectively layered envelopes (.fitshare). Use recipient keys JSON generated beside{" "}
+                      genesis (<span className="font-mono text-fit-accent">x25519_static_secret_hex</span>) — not manual HEX edits unless you trust upstream tooling.
+                    </p>
+                    <LaunchRow label=".fitshare" hint={fitPath ?? "unset"} narrow />
+                    <div className="mt-6 flex gap-3">
+                      <GhostBtn onClick={chooseShareFile}>Pick .fitshare</GhostBtn>
+                      <GhostBtn onClick={chooseKeys}>Recipient keys</GhostBtn>
+                    </div>
+                    <PrimaryBtnOutline className="mt-8" disabled={!fitPath || !keysJson} onClick={loadRecipient}>
+                      Enter investor cockpit
+                    </PrimaryBtnOutline>
+                  </LandingCard>
                 </div>
-              </div>
-            </div>
-
-            {(layerPermitted(mode, 6, permitted) || mode === "owner") && layers["layer6"] && (
-              <section className="mt-10 rounded-xl border border-fit-border bg-fit-card/60 p-4 text-xs text-fit-muted">
-                <strong className="text-slate-400">Reputation & attestations</strong>
-                <pre className="mt-2 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] text-slate-500">
-                  {JSON.stringify(layers["layer6"], null, 2)}
-                </pre>
-              </section>
+              </main>
+            ) : (
+              <FitDashboard
+                mode={mode}
+                fitPath={fitPath}
+                layers={layers}
+                deltas={deltas}
+                inspect={inspect}
+                shareMeta={shareMeta}
+                busy={busy}
+                verifyOk={verifyOk}
+                recipientPub={recipientPub}
+                setRecipientPub={setRecipientPub}
+                shareLayers={shareLayers}
+                setShareLayers={setShareLayers}
+                expiresDays={expiresDays}
+                setExpiresDays={setExpiresDays}
+                liveTracking={liveTracking}
+                setLiveTracking={setLiveTracking}
+                exportShare={exportShare}
+                onDemoDelta={onDemoDelta}
+              />
             )}
-          </>
-        )}
-      </main>
+          </div>
+
+          {(mode === "owner" || mode === "recipient") && (
+            <aside className="hidden w-[332px] shrink-0 overflow-y-auto border-l border-fit-border bg-fit-bg/98 px-6 py-6 xl:flex xl:flex-col">
+              <RightColumnRails
+                layer6={layers["layer6"]}
+                deltas={deltas}
+                relayInbound={mode === "recipient" ? relayInbound : []}
+                relayStatus={mode === "recipient" ? relayRecipientStatus : "off"}
+                relayUrl={RELAY_WS_URL}
+                ownerPushes={mode === "owner"}
+              />
+            </aside>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function LandingCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-fit-border bg-fit-card p-5">
-      <p className="text-xs uppercase tracking-wide text-fit-muted">{label}</p>
-      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
-      {sub ? <p className="mt-1 text-[11px] text-fit-muted">{sub}</p> : null}
+    <section className="fit-card-glass px-8 py-10">
+      <h2 className="mb-6 text-xl font-semibold tracking-tight text-white">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function LaunchRow({ label, hint, narrow }: { label: string; hint: string; narrow?: boolean }) {
+  return (
+    <div
+      className={`mt-4 rounded-lg border border-fit-border/60 bg-fit-ink/40 px-3 py-2 font-mono text-[11px] text-fit-muted ${narrow ? "truncate" : ""}`}
+    >
+      <span className="text-fit-accent/85">{label}:</span> {hint}
     </div>
   );
 }
 
-function MiniTrigger({
-  label,
+function GhostBtn({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl border border-fit-border px-4 py-2 text-xs font-semibold uppercase tracking-wide text-fit-muted hover:border-fit-accent hover:text-white"
+    >
+      {children}
+    </button>
+  );
+}
+
+function PrimaryBtn({
+  children,
   disabled,
   onClick,
+  className = "",
 }: {
-  label: string;
+  children: ReactNode;
   disabled?: boolean;
-  onClick: () => void | Promise<void>;
+  onClick: () => void;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
-      className="rounded-lg border border-emerald-900/70 bg-fit-bg/70 px-3 py-1.5 text-xs font-medium text-emerald-200 hover:bg-fit-highlight/50 disabled:opacity-35"
       onClick={onClick}
+      className={`w-full rounded-xl bg-fit-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black hover:bg-fit-accentDim disabled:opacity-40 ${className}`}
     >
-      {label}
+      {children}
     </button>
   );
 }
+
+function PrimaryBtnOutline({
+  children,
+  disabled,
+  onClick,
+  className = "",
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`w-full rounded-xl border border-fit-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-fit-accent hover:bg-fit-accent hover:text-black disabled:opacity-40 ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+

@@ -13,10 +13,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { ReactNode } from "react";
 import { formatInr } from "../lib/fmt";
 
-const GREEN = "#22c55e";
-const MUTED = "#64748b";
+export const CHART_GREEN = "#a3ff33";
+const MUTED = "#5c6478";
 
 type L2 = {
   cibil_score_history?: { month?: string; score?: number }[];
@@ -56,7 +57,7 @@ function donutFromLayer3(layer: unknown): { name: string; value: number }[] | nu
     { name: "Mutual funds", value: mf },
     { name: "Fixed deposits", value: fd },
     { name: "Gold", value: gold },
-    { name: "Cash range (mid)", value: rng },
+    { name: "Cash (mid)", value: rng },
   ].filter((p) => p.value > 0);
   return parts.length ? parts : null;
 }
@@ -70,83 +71,145 @@ function parseBankMid(s: string): number {
   return (a + b) / 2;
 }
 
+function nwFromL3(layer: unknown): number | null {
+  if (!layer || typeof layer !== "object") return null;
+  const nw = (layer as { net_worth?: number }).net_worth;
+  return typeof nw === "number" ? nw : null;
+}
+
 export function AssetDonut({ layer3 }: { layer3: unknown }) {
   const data = donutFromLayer3(layer3);
+  const nw = nwFromL3(layer3);
+  const donutColors = ["#a3ff33", "#06b6d4", "#8b5cf6", "#eab308", "#f97316", "#64748b"];
+
   if (!data?.length) {
     return (
-      <div className="rounded-xl border border-fit-border bg-fit-card/60 p-4 text-fit-muted">
-        Asset allocation unavailable for this persona / layer.
+      <div className="flex h-[320px] items-center justify-center rounded-xl ring-neon-soft">
+        Asset allocation unavailable.
       </div>
     );
   }
 
-  const colors = ["#22c55e", "#06b6d4", "#8b5cf6", "#eab308", "#f97316", "#94a3b8"];
-
   return (
-    <div className="h-72 rounded-xl border border-fit-border bg-fit-card p-4">
-      <h3 className="mb-2 text-sm font-medium text-slate-300">Asset allocation</h3>
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="fit-card-glass relative h-[320px] p-4 lg:h-[340px]">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Sales overview · asset mix</h3>
+          <p className="text-[11px] text-fit-accent">
+            Center total ·{" "}
+            <span className="font-bold tabular-nums text-white">{nw != null ? formatInr(nw) : "—"}</span>
+          </p>
+        </div>
+        <span className="text-[10px] uppercase tracking-wide text-fit-muted">Layer 3</span>
+      </div>
+      <ResponsiveContainer width="100%" height="88%">
         <PieChart>
           <Pie
             data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={56}
-            outerRadius={88}
+            cx="38%"
+            cy="52%"
+            innerRadius={72}
+            outerRadius={106}
             paddingAngle={2}
             dataKey="value"
             nameKey="name"
+            stroke="#1a1d28"
+            strokeWidth={2}
           >
             {data.map((_, i) => (
-              <Cell key={i} fill={colors[i % colors.length]} />
+              <Cell key={i} fill={donutColors[i % donutColors.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(v: number) => formatInr(v)} />
-          <Legend />
+          <Tooltip formatter={(v: number) => formatInr(v)} contentStyle={{ background: "#15171e", border: "1px solid #242833", borderRadius: 8 }} />
+          <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ right: -4 }} />
         </PieChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
+/** CIBIL 12-month-style trend. */
 export function CreditTrendLine({ layer2 }: { layer2: unknown }) {
   const h = layer2 && typeof layer2 === "object" ? (layer2 as L2).cibil_score_history : undefined;
-  const data =
+  const chartData =
     Array.isArray(h) && h.length
       ? h.map((x) => ({
-          month: String(x.month ?? ""),
+          t: String(x.month ?? "").slice(2),
           score: typeof x.score === "number" ? x.score : 0,
         }))
       : [];
 
-  if (!data.length) {
-    return (
-      <div className="h-64 rounded-xl border border-fit-border bg-fit-card/60 p-4 text-fit-muted">
-        No CIBIL history in this FIT.
-      </div>
-    );
-  }
+  if (!chartData.length) return null;
 
   return (
-    <div className="h-72 rounded-xl border border-fit-border bg-fit-card p-4">
-      <h3 className="mb-2 text-sm font-medium text-slate-300">Credit score trend</h3>
+    <ChartCard title="CIBIL trajectory" subtitle="12-month window · Layer 2">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2a3040" />
-          <XAxis dataKey="month" stroke={MUTED} tick={{ fill: "#8b929e", fontSize: 11 }} />
-          <YAxis stroke={MUTED} domain={[600, "auto"]} tick={{ fill: "#8b929e", fontSize: 11 }} />
-          <Tooltip />
-          <Area type="monotone" dataKey="score" stroke={GREEN} fill={GREEN} fillOpacity={0.15} />
+        <AreaChart data={chartData}>
+          <defs>
+            <linearGradient id="cibilGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={CHART_GREEN} stopOpacity={0.45} />
+              <stop offset="100%" stopColor={CHART_GREEN} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a3038" />
+          <XAxis dataKey="t" stroke={MUTED} tick={{ fill: "#7b8494", fontSize: 11 }} axisLine={{ stroke: "#2a3038" }} />
+          <YAxis stroke={MUTED} domain={[600, "auto"]} tick={{ fill: "#7b8494", fontSize: 11 }} axisLine={{ stroke: "#2a3038" }} />
+          <Tooltip
+            formatter={(v: number) => [v, "score"]}
+            contentStyle={{ background: "#15171e", border: "1px solid #242833", borderRadius: 8 }}
+          />
+          <Area type="monotone" dataKey="score" stroke={CHART_GREEN} strokeWidth={2} fill="url(#cibilGrad)" />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </ChartCard>
   );
 }
 
-type L4 = {
-  itr?: { fy?: string; income?: number }[];
-};
+/** Monthly trading notion (Priya-lite / Arjun-heavy). */
+export function TradingVolumeChart({ layer5 }: { layer5: unknown }) {
+  const o = layer5 && typeof layer5 === "object" ? (layer5 as Record<string, unknown>) : null;
+  const tv = o?.trading_volume_monthly;
+  const chartData = Array.isArray(tv)
+    ? tv
+        .map((x) => {
+          const e = x as Record<string, unknown>;
+          return {
+            t: String(e.month ?? "").slice(2),
+            vol_lakh: typeof e.volume === "number" ? e.volume / 100000 : 0,
+          };
+        })
+        .filter((d) => d.t)
+    : [];
 
+  if (!chartData.length || chartData.every((d) => d.vol_lakh === 0)) return null;
+
+  return (
+    <ChartCard title="Trading pulse" subtitle="Rough monthly turnover (₹ Lakh) · Layer 5">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData}>
+          <defs>
+            <linearGradient id="tvGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a3038" />
+          <XAxis dataKey="t" stroke={MUTED} tick={{ fill: "#7b8494", fontSize: 11 }} />
+          <YAxis stroke={MUTED} tick={{ fill: "#7b8494", fontSize: 11 }} />
+          <Tooltip
+            formatter={(v: number) => [`${v.toFixed(2)} L`, "Turnover"]}
+            contentStyle={{ background: "#15171e", border: "1px solid #242833", borderRadius: 8 }}
+          />
+          <Area type="monotone" dataKey="vol_lakh" stroke="#22d3ee" strokeWidth={2} fill="url(#tvGrad)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    </ChartCard>
+  );
+}
+
+type L4 = { itr?: { fy?: string; income?: number }[] };
+
+/** Shown beside donut when vertical space allows — ITR ₹ Lakh bars. */
 export function IncomeBarChart({ layer4 }: { layer4: unknown }) {
   const itr = layer4 && typeof layer4 === "object" ? (layer4 as L4).itr : undefined;
   const data =
@@ -157,97 +220,87 @@ export function IncomeBarChart({ layer4 }: { layer4: unknown }) {
         }))
       : [];
 
-  if (!data.length) {
-    return (
-      <div className="h-64 rounded-xl border border-fit-border bg-fit-card/60 p-4 text-fit-muted">
-        No ITR series in this FIT.
-      </div>
-    );
-  }
+  if (!data.length) return null;
 
   return (
-    <div className="h-72 rounded-xl border border-fit-border bg-fit-card p-4">
-      <h3 className="mb-2 text-sm font-medium text-slate-300">ITR income (₹ Lakhs)</h3>
+    <ChartCard title="ITR runway" subtitle="Income · ₹ Lakhs · Layer 4">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2a3040" />
-          <XAxis dataKey="fy" stroke={MUTED} tick={{ fill: "#8b929e", fontSize: 11 }} />
-          <YAxis stroke={MUTED} tick={{ fill: "#8b929e", fontSize: 11 }} />
-          <Tooltip formatter={(v: number) => [`${v.toFixed(2)} L`, "Income"]} />
-          <Bar dataKey="income" fill={GREEN} radius={[4, 4, 0, 0]} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a3038" vertical={false} />
+          <XAxis dataKey="fy" stroke={MUTED} tick={{ fill: "#7b8494", fontSize: 10 }} />
+          <YAxis stroke={MUTED} tick={{ fill: "#7b8494", fontSize: 10 }} />
+          <Tooltip
+            formatter={(v: number) => [`${v.toFixed(1)} L`, "Income"]}
+            contentStyle={{ background: "#15171e", border: "1px solid #242833", borderRadius: 8 }}
+          />
+          <Bar dataKey="income" fill={CHART_GREEN} radius={[4, 4, 0, 0]} maxBarSize={36} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </ChartCard>
   );
 }
 
-export function PortfolioTable({ layer3 }: { layer3: unknown }) {
-  const o = layer3 && typeof layer3 === "object" ? (layer3 as Record<string, unknown>) : null;
-  const eq = o?.equity_portfolio as Record<string, unknown> | undefined;
-  const holdings = eq?.holdings;
-  const rows =
-    Array.isArray(holdings) && holdings.length
-      ? holdings.map((h) => {
-          const x = h as Record<string, unknown>;
-          return {
-            name: String(x.name ?? ""),
-            value: typeof x.value === "number" ? x.value : 0,
-            weight: typeof x.weight_pct === "number" ? x.weight_pct : 0,
-          };
-        })
-      : [];
-
-  if (!rows.length) {
-    return (
-      <div className="rounded-xl border border-fit-border bg-fit-card/60 p-4 text-fit-muted">
-        No equity holdings in this layer.
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-fit-border bg-fit-card">
-      <div className="border-b border-fit-border px-4 py-3 text-sm font-medium text-slate-300">
-        Portfolio holdings
-      </div>
-      <table className="w-full text-left text-sm">
-        <thead className="bg-fit-bg/80 text-fit-muted">
-          <tr>
-            <th className="px-4 py-2 font-medium">Name</th>
-            <th className="px-4 py-2 font-medium">Value</th>
-            <th className="px-4 py-2 font-medium">Weight</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.name} className="border-t border-fit-border hover:bg-fit-highlight/40">
-              <td className="px-4 py-2">{r.name}</td>
-              <td className="px-4 py-2 font-mono text-emerald-200/95">{formatInr(r.value)}</td>
-              <td className="px-4 py-2 text-fit-muted">{r.weight}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-export function LockedCard({
-  layerId,
+function ChartCard({
   title,
+  subtitle,
+  children,
 }: {
-  layerId: number;
   title: string;
+  subtitle: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-[120px] flex-col items-center justify-center rounded-xl border border-dashed border-fit-border bg-fit-card/40 p-6 text-center">
-      <span className="text-xs uppercase tracking-wide text-fit-muted">
+    <div className="fit-card-glass relative flex flex-col pt-4" style={{ minHeight: 280 }}>
+      <div className="px-4 pb-2">
+        <h3 className="text-sm font-semibold text-white">{title}</h3>
+        <p className="text-[10px] text-fit-muted">{subtitle}</p>
+      </div>
+      <div className="flex-1 min-h-[220px] px-2 pb-2">{children}</div>
+    </div>
+  );
+}
+
+export function MiniStatTiles({
+  invCount,
+  avgTicketFormatted,
+  cibilDelta,
+}: {
+  invCount: string;
+  avgTicketFormatted: string;
+  cibilDelta: string;
+}) {
+  return (
+    <div className="flex h-full min-h-[200px] flex-col gap-4">
+      <div className="fit-card-glass flex flex-1 flex-col justify-center px-5 py-4 ring-neon-soft">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-fit-muted">
+          Investments made
+        </span>
+        <p className="mt-3 text-2xl font-bold tabular-nums text-white">{invCount}</p>
+      </div>
+      <div className="fit-card-glass flex flex-1 flex-col justify-center px-5 py-4">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-fit-muted">
+          Avg ticket
+        </span>
+        <p className="mt-3 font-mono text-xl font-semibold text-fit-accent">{avgTicketFormatted}</p>
+      </div>
+      <div className="fit-card-glass flex flex-1 flex-col justify-center px-5 py-4">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-fit-muted">
+          Credit score shift
+        </span>
+        <p className="mt-3 text-2xl font-bold tabular-nums text-fit-accent">{cibilDelta}</p>
+      </div>
+    </div>
+  );
+}
+
+export function LockedCard({ layerId, title }: { layerId: number; title: string }) {
+  return (
+    <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-fit-border/80 bg-fit-ink/40 p-6 text-center">
+      <span className="rounded-full bg-fit-border/50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-fit-muted">
         Layer {layerId}
       </span>
-      <p className="mt-2 text-sm font-medium text-slate-400">{title}</p>
-      <p className="mt-2 text-xs text-fit-muted">
-        Not included in this share envelope.
-      </p>
+      <p className="mt-3 text-lg font-medium text-slate-400">{title}</p>
+      <p className="mt-2 max-w-xs text-xs text-fit-muted">Not included in this share envelope.</p>
     </div>
   );
 }

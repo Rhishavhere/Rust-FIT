@@ -9,6 +9,8 @@ export type LayersMap = Record<string, unknown>;
 
 export type InspectInfo = {
   fit_id_short: string;
+  /** 32 hex chars — same key the relay uses (`PUSH_DELTA` / `SUBSCRIBE`). */
+  fit_id_hex: string;
   display_name: string;
   fit_score: number;
   layer_count: number;
@@ -25,6 +27,7 @@ export type DeltaRow = {
 
 export type ShareMeta = {
   source_fit_id_short: string;
+  source_fit_id_hex: string;
   permitted_layers: number[];
   expires_at: number;
   live_tracking: boolean;
