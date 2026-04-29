@@ -42,3 +42,4 @@ fit-app/src-tauri/gen/schemas/
 # Logs
 *.log
 npm-debug.log*
+.github/copilot-instructions.md
