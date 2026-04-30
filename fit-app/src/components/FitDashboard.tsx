@@ -194,6 +194,61 @@ export function FitDashboard(p: Props) {
           </div>
         </div>
       )}
+      <div className="grid gap-5 px-8 pb-6 xl:grid-cols-12">
+        <div className="xl:col-span-5">
+          {allow(p.mode, 3, permitted) ? <AssetDonut layer3={l3} /> : <LockedCard layerId={3} title="Assets" />}
+        </div>
+
+        <div className="xl:col-span-2">
+          {allow(p.mode, 3, permitted) ||
+          allow(p.mode, 2, permitted) ||
+          allow(p.mode, 5, permitted) ? (
+            <MiniStatTiles
+              invCount={miniInv}
+              avgTicketFormatted={miniAvg}
+              cibilDelta={allow(p.mode, 2, permitted) ? cdelta : "Layer 2 locked"}
+            />
+          ) : (
+            <LockedCard layerId={5} title="Signals" />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-5 xl:col-span-5">
+          {creditOk ? <CreditTrendLine layer2={l2} /> : null}
+          {!creditOk && tradeOk ? <TradingVolumeChart layer5={l5} /> : null}
+          {creditOk && tradeOk ? <TradingVolumeChart layer5={l5} /> : null}
+          {!creditOk && !tradeOk && (allow(p.mode, 2, permitted) || allow(p.mode, 5, permitted)) ? (
+            <LockedCard layerId={2} title="Credit / pulse" />
+          ) : null}
+        </div>
+      </div>
+
+      <div className="grid gap-5 px-8 pb-6 lg:grid-cols-2">
+        {allow(p.mode, 4, permitted) ? (
+          <IncomeBarChart layer4={l4} />
+        ) : (
+          <div className="fit-card-glass flex min-h-[260px] flex-col items-center justify-center text-xs text-fit-muted">
+            ITR plane locked · Layer 4
+          </div>
+        )}
+        <div className="fit-card-glass flex min-h-[260px] flex-col items-center justify-center px-8 text-center">
+          <span className="text-[10px] uppercase tracking-[0.4em] text-fit-muted">premium ring</span>
+          <p className="mt-6 text-3xl font-semibold text-fit-accent">
+            {fitScore ?? "—"}
+            <span className="text-sm text-white/60"> FIT</span>
+          </p>
+          <p className="mt-3 text-xs leading-relaxed text-fit-muted">
+            Holistic trust index — header materialized at genesis.
+          </p>
+          <button
+            type="button"
+            disabled
+            className="mt-10 rounded-2xl border border-fit-accent/40 px-10 py-2.5 text-[10px] font-bold uppercase tracking-[0.35em] text-fit-accent opacity-60"
+          >
+            agent deck soon
+          </button>
+        </div>
+      </div>
 
       {p.mode === "owner" && p.inspect && (
         <div className="px-8 pb-4">
@@ -254,61 +309,7 @@ export function FitDashboard(p: Props) {
         </div>
       )}
 
-      <div className="grid gap-5 px-8 pb-6 xl:grid-cols-12">
-        <div className="xl:col-span-5">
-          {allow(p.mode, 3, permitted) ? <AssetDonut layer3={l3} /> : <LockedCard layerId={3} title="Assets" />}
-        </div>
-
-        <div className="xl:col-span-2">
-          {allow(p.mode, 3, permitted) ||
-          allow(p.mode, 2, permitted) ||
-          allow(p.mode, 5, permitted) ? (
-            <MiniStatTiles
-              invCount={miniInv}
-              avgTicketFormatted={miniAvg}
-              cibilDelta={allow(p.mode, 2, permitted) ? cdelta : "Layer 2 locked"}
-            />
-          ) : (
-            <LockedCard layerId={5} title="Signals" />
-          )}
-        </div>
-
-        <div className="flex flex-col gap-5 xl:col-span-5">
-          {creditOk ? <CreditTrendLine layer2={l2} /> : null}
-          {!creditOk && tradeOk ? <TradingVolumeChart layer5={l5} /> : null}
-          {creditOk && tradeOk ? <TradingVolumeChart layer5={l5} /> : null}
-          {!creditOk && !tradeOk && (allow(p.mode, 2, permitted) || allow(p.mode, 5, permitted)) ? (
-            <LockedCard layerId={2} title="Credit / pulse" />
-          ) : null}
-        </div>
-      </div>
-
-      <div className="grid gap-5 px-8 pb-6 lg:grid-cols-2">
-        {allow(p.mode, 4, permitted) ? (
-          <IncomeBarChart layer4={l4} />
-        ) : (
-          <div className="fit-card-glass flex min-h-[260px] flex-col items-center justify-center text-xs text-fit-muted">
-            ITR plane locked · Layer 4
-          </div>
-        )}
-        <div className="fit-card-glass flex min-h-[260px] flex-col items-center justify-center px-8 text-center">
-          <span className="text-[10px] uppercase tracking-[0.4em] text-fit-muted">premium ring</span>
-          <p className="mt-6 text-3xl font-semibold text-fit-accent">
-            {fitScore ?? "—"}
-            <span className="text-sm text-white/60"> FIT</span>
-          </p>
-          <p className="mt-3 text-xs leading-relaxed text-fit-muted">
-            Holistic trust index — header materialized at genesis.
-          </p>
-          <button
-            type="button"
-            disabled
-            className="mt-10 rounded-2xl border border-fit-accent/40 px-10 py-2.5 text-[10px] font-bold uppercase tracking-[0.35em] text-fit-accent opacity-60"
-          >
-            agent deck soon
-          </button>
-        </div>
-      </div>
+      
 
       <div className="px-8 pb-8">
         {allow(p.mode, 2, permitted) ||

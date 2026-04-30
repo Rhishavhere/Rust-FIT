@@ -245,7 +245,6 @@ export default function App() {
 
   return (
     <div className="flex min-h-full font-sans">
-      <Sidebar personaName={personaName} mode={mode} />
 
       <div className="flex min-h-full min-w-0 flex-1 flex-col">
         <TopBar

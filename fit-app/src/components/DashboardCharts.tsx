@@ -271,12 +271,12 @@ export function MiniStatTiles({
 }) {
   return (
     <div className="flex h-full min-h-[200px] flex-col gap-4">
-      <div className="fit-card-glass flex flex-1 flex-col justify-center px-5 py-4 ring-neon-soft">
+      {/* <div className="fit-card-glass flex flex-1 flex-col justify-center px-5 ring-neon-soft">
         <span className="text-[11px] font-medium uppercase tracking-wide text-fit-muted">
           Investments made
         </span>
         <p className="mt-3 text-2xl font-bold tabular-nums text-white">{invCount}</p>
-      </div>
+      </div> */}
       <div className="fit-card-glass flex flex-1 flex-col justify-center px-5 py-4">
         <span className="text-[11px] font-medium uppercase tracking-wide text-fit-muted">
           Avg ticket
