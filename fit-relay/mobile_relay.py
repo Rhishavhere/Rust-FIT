@@ -113,8 +113,8 @@ async def handler(ws: Any) -> None:
 
 
 async def main() -> None:
-    async with websockets.serve(handler, "127.0.0.1", 8765):
-        LOG.info("FIT relay ws://127.0.0.1:8765")
+    async with websockets.serve(handler, "0.0.0.0", 8766):
+        LOG.info("FIT Mobile relay ws://0.0.0.0:8766")
         await asyncio.Future()
 
 
