@@ -95,11 +95,6 @@ export function FitDashboard(p: Props) {
     return `${sign}${d} pts window`;
   }, [L2.history]);
 
-  const miniInv = useMemo(() => {
-    if (L5.investmentCount != null) return String(L5.investmentCount);
-    return "—";
-  }, [L5.investmentCount]);
-
   const miniAvg =
     L5.avgTicket != null ? money(L5.avgTicket) : formatCompactAvg(L5);
 
@@ -204,7 +199,6 @@ export function FitDashboard(p: Props) {
           allow(p.mode, 2, permitted) ||
           allow(p.mode, 5, permitted) ? (
             <MiniStatTiles
-              invCount={miniInv}
               avgTicketFormatted={miniAvg}
               cibilDelta={allow(p.mode, 2, permitted) ? cdelta : "Layer 2 locked"}
             />
@@ -235,7 +229,7 @@ export function FitDashboard(p: Props) {
           <span className="text-[10px] uppercase tracking-[0.4em] text-fit-muted">premium ring</span>
           <p className="mt-6 text-3xl font-semibold text-fit-accent">
             {fitScore ?? "—"}
-            <span className="text-sm text-white/60"> FIT</span>
+            <span className="text-sm text-fit-fg/60"> FIT</span>
           </p>
           <p className="mt-3 text-xs leading-relaxed text-fit-muted">
             Holistic trust index — header materialized at genesis.
@@ -254,7 +248,7 @@ export function FitDashboard(p: Props) {
         <div className="px-8 pb-4">
           <div className="fit-card-glass px-6 py-5 lg:flex lg:flex-row lg:flex-wrap lg:items-end lg:gap-6">
             <div className="mb-5 flex-1 lg:mb-0">
-              <h3 className="text-lg font-semibold text-white">Share selective disclosure</h3>
+              <h3 className="text-lg font-semibold text-fit-fg">Share selective disclosure</h3>
               <p className="mt-2 max-w-xl text-[12px] leading-relaxed text-fit-muted">
                 Paste investor <span className="font-mono text-fit-accent">X25519</span> pubkey, comma-separated
                 layers (<code className="text-fit-accent">2,3</code>) and export a relay-ready envelope.
@@ -289,7 +283,7 @@ export function FitDashboard(p: Props) {
                 onChange={(e) => p.setExpiresDays(Number(e.target.value))}
               />
             </label>
-            <label className="flex items-center gap-2 py-8 text-[12px] text-slate-200">
+            <label className="flex items-center gap-2 py-8 text-[12px] text-fit-fgSoft">
               <input
                 type="checkbox"
                 className="h-5 w-5 rounded accent-fit-accent"
@@ -301,7 +295,7 @@ export function FitDashboard(p: Props) {
             <button
               type="button"
               onClick={() => void p.exportShare()}
-              className="rounded-xl bg-fit-accent px-8 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black hover:bg-fit-accentDim"
+              className="rounded-xl bg-fit-accent px-8 py-3 text-sm font-bold uppercase tracking-[0.12em] text-fit-onAccent hover:bg-fit-accentDim"
             >
               Export .fitshare
             </button>
@@ -371,10 +365,10 @@ function GlowStatCard({
   return (
     <div className="fit-card-glass relative overflow-hidden p-6">
       <div
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${positive ? "from-fit-accent/8" : "from-rose-500/10"} to-transparent`}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${positive ? "from-white/[0.07]" : "from-white/[0.04]"} to-transparent`}
       />
       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-fit-muted">{label}</p>
-      <p className="relative z-10 mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">{value}</p>
+      <p className="relative z-10 mt-3 text-xl font-semibold tracking-tight text-fit-fg sm:text-2xl">{value}</p>
       <p className="relative z-10 mt-2 text-[11px] text-fit-accent/90">{trend}</p>
     </div>
   );
@@ -397,7 +391,7 @@ function MiniTrig({
       className={`rounded-xl border px-5 py-2.5 text-xs font-semibold uppercase tracking-wide transition disabled:opacity-35 ${
         disabled
           ? "border-fit-border text-fit-muted"
-          : "border-fit-accent bg-fit-accent text-black hover:bg-fit-accentDim"
+          : "border-fit-accent bg-fit-accent text-fit-onAccent hover:bg-fit-accentDim"
       }`}
     >
       {label}

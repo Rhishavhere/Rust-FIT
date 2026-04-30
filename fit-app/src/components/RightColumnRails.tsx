@@ -110,13 +110,13 @@ export function RightColumnRails({
       <section className="fit-card-glass overflow-hidden ring-neon-soft">
         <header className="flex flex-col gap-1 border-b border-fit-border/80 px-4 py-3">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-white">Relay bus · WebSocket</h3>
+            <h3 className="text-sm font-semibold text-fit-fg">Relay bus · WebSocket</h3>
             <span
               className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
                 ownerPushes
                   ? "bg-fit-accent/25 text-fit-accent"
                   : relayStatus === "live"
-                    ? "bg-fit-accent text-black"
+                    ? "bg-fit-accent text-fit-onAccent"
                     : "bg-fit-border text-fit-muted"
               }`}
             >
@@ -153,7 +153,7 @@ export function RightColumnRails({
               return (
                 <li key={`${i}-${ev.raw.slice(0, 32)}`} className="px-4 py-2.5 text-[10px]">
                   <span className="font-mono text-fit-accent">{t}</span>{" "}
-                  <span className="text-slate-200">{sum}</span>
+                  <span className="text-fit-fgSoft">{sum}</span>
                   <p className="mt-1 text-fit-muted">
                     layer {layer}
                     {ts != null ? ` · ${isoDate(ts)}` : ""}
@@ -167,7 +167,7 @@ export function RightColumnRails({
 
       <section className="fit-card-glass overflow-hidden ring-neon-soft">
         <header className="flex items-center justify-between border-b border-fit-border/80 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">FIT evolution · Δ log</h3>
+          <h3 className="text-sm font-semibold text-fit-fg">FIT evolution · Δ log</h3>
           <span className="rounded bg-fit-highlight px-2 py-0.5 text-[10px] font-medium uppercase text-fit-accent">
             ON-CHAIN FILE
           </span>
@@ -180,9 +180,9 @@ export function RightColumnRails({
           ) : (
             notifications.map((n) => (
               <li key={n.delta_id} className="flex gap-3 px-4 py-3 text-xs">
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-fit-accent shadow-[0_0_8px_rgba(163,255,51,.7)]" />
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-fit-accent ring-2 ring-fit-fg/15" />
                 <div>
-                  <p className="leading-snug text-slate-200">{n.summary}</p>
+                  <p className="leading-snug text-fit-fgSoft">{n.summary}</p>
                   <p className="mt-1 text-[10px] text-fit-muted">
                     Layer {n.layer_affected} · {isoDate(n.timestamp)}
                   </p>
@@ -195,7 +195,7 @@ export function RightColumnRails({
 
       <section className="fit-card-glass">
         <header className="border-b border-fit-border/80 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">Access activities</h3>
+          <h3 className="text-sm font-semibold text-fit-fg">Access activities</h3>
           <p className="mt-1 text-[10px] text-fit-muted">Layer 6 — who touched which plane</p>
         </header>
         <ul className="max-h-[240px] space-y-4 overflow-auto px-4 py-4">
@@ -211,11 +211,11 @@ export function RightColumnRails({
               ]
           ).map((a, i) => (
             <li key={typeof a.id === "string" ? a.id : `x-${i}`} className="flex gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-fit-border/70 text-[10px] font-bold text-slate-300">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-fit-border/70 text-[10px] font-bold text-fit-fgSoft">
                 {(i % 9) + 1}
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-200">{String(a.title)}</p>
+                <p className="text-xs font-medium text-fit-fgSoft">{String(a.title)}</p>
                 <p className="mt-0.5 text-[11px] text-fit-muted">{String(a.detail)}</p>
                 <p className="mt-1 text-[10px] text-fit-muted/80">{typeof a.time === "string" ? a.time : "—"}</p>
               </div>
@@ -226,7 +226,7 @@ export function RightColumnRails({
 
       <section className="fit-card-glass">
         <header className="border-b border-fit-border/80 px-4 py-3">
-          <h3 className="text-sm font-semibold text-white">Access holders · counter-parties</h3>
+          <h3 className="text-sm font-semibold text-fit-fg">Access holders · counter-parties</h3>
         </header>
         <ul className="divide-y divide-fit-border/40">
           {contacts.map((c) => (
@@ -240,7 +240,7 @@ export function RightColumnRails({
                 {c.initials}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white">{c.name}</p>
+                <p className="truncate text-sm font-medium text-fit-fg">{c.name}</p>
                 <p className="truncate text-[11px] text-fit-muted">{c.subtitle}</p>
               </div>
               <button

@@ -30,12 +30,12 @@ export function ManualCliGuide(p: Props) {
           Manual changes · same FIT as the buttons
         </span>
         <span className="mt-1 block text-[12px] leading-relaxed text-fit-muted/95">
-          Prefer <span className="text-white/90">patch files</span> in the terminal — no fragile inline JSON in PowerShell
+          Prefer <span className="text-fit-fg/90">patch files</span> in the terminal — no fragile inline JSON in PowerShell
           or Bash. Patch JSON for each demo lives under keys in <code className="text-fit-accent/90">{PATCH_SOURCE}</code>.
         </span>
       </summary>
       <div className="border-t border-fit-border/50 px-5 pb-5 pt-2 text-[11px] leading-relaxed text-fit-muted">
-        <ol className="ml-4 list-decimal space-y-2 text-white/85">
+        <ol className="ml-4 list-decimal space-y-2 text-fit-fg/85">
           <li>
             Copy one patch array from <code className="text-fit-accent/90">{PATCH_SOURCE}</code> into a{" "}
             <code className="text-fit-accent/90">.json</code> file (RFC 6902 array).
@@ -51,20 +51,20 @@ export function ManualCliGuide(p: Props) {
         </ol>
 
         <p className="mt-4 text-[10px] uppercase tracking-wider text-fit-muted">Quick checks</p>
-        <pre className="mt-2 overflow-x-auto rounded-lg border border-fit-border/60 bg-black/40 p-3 font-mono text-[10px] text-fit-accent/95">
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-fit-border/60 bg-fit-ink/80 p-3 font-mono text-[10px] text-fit-accent/95">
           {`${verify}\n${inspect}`}
         </pre>
 
         <p className="mt-4 text-[10px] uppercase tracking-wider text-fit-muted">Demo deltas → CLI (template)</p>
         <p className="mt-1 text-[10px] text-fit-muted/90">
-          Replace <code className="text-white/70">{keysQ}</code> with the path to the same keys JSON you loaded in this app.
+          Replace <code className="text-fit-fg/70">{keysQ}</code> with the path to the same keys JSON you loaded in this app.
         </p>
         <ul className="mt-3 space-y-3">
           {MANUAL_DELTA_ROWS.map((row) => {
             const cmd = `${FIT_CLI} apply-delta ${fitQ} -k ${keysQ} --layer ${row.layer} --summary "${row.summary}" --attester ${row.attester} --patch-file ${row.suggestedPatchFile}`;
             return (
-              <li key={row.patchKey} className="rounded-lg border border-fit-border/40 bg-black/25 p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/90">
+              <li key={row.patchKey} className="rounded-lg border border-fit-border/40 bg-fit-fg/[0.05] p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-fit-fg/90">
                   {row.label}{" "}
                   <span className="font-normal text-fit-muted">
                     · layer {row.layer} · attester {row.attester}
@@ -77,12 +77,12 @@ export function ManualCliGuide(p: Props) {
         </ul>
 
         <p className="mt-4 text-[10px] uppercase tracking-wider text-fit-muted">Selective share (matches form above)</p>
-        <pre className="mt-2 overflow-x-auto rounded-lg border border-fit-border/60 bg-black/40 p-3 font-mono text-[10px] text-fit-accent/95">
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-fit-border/60 bg-fit-ink/80 p-3 font-mono text-[10px] text-fit-accent/95">
           {share}
         </pre>
         <p className="mt-2 text-[10px] text-fit-muted/90">
           Investor opens <code className="text-fit-accent/90">.fitshare</code> in this app (recipient keys). The CLI{" "}
-          <code className="text-white/60">open</code> subcommand is for full owner <code className="text-white/60">.fit</code>{" "}
+          <code className="text-fit-fg/60">open</code> subcommand is for full owner <code className="text-fit-fg/60">.fit</code>{" "}
           materialization, not encrypted envelopes.
         </p>
       </div>

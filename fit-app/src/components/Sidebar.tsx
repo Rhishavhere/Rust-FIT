@@ -20,7 +20,7 @@ export function Sidebar({
         </div>
         <div>
           <p className="font-semibold uppercase tracking-[0.2em] text-fit-muted opacity-70">Dwison-ish</p>
-          <p className="text-sm font-bold text-white">FIT OS · v1</p>
+          <p className="text-sm font-bold text-fit-fg">FIT OS · v1</p>
         </div>
       </div>
 
@@ -44,11 +44,11 @@ export function Sidebar({
 
       <div className="border-t border-fit-border/80 px-5 py-6">
         <div className="flex items-center gap-3 rounded-xl border border-fit-border/60 bg-fit-ink/50 p-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-800/70 to-fit-ink text-sm font-semibold uppercase text-fit-accent shadow-neon">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-neutral-700/80 to-fit-ink text-sm font-semibold uppercase text-fit-accent shadow-neon">
             {initials || "?"}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-white">
+            <p className="truncate text-sm font-medium text-fit-fg">
               {personaName || "Guy Hawkins archetype"}
             </p>
             <p className="truncate text-[11px] text-fit-muted capitalize">
@@ -100,7 +100,7 @@ function SidebarLink({
       }`}
     >
       <span
-        className={`text-sm ${active ? "font-semibold text-white" : "font-medium text-fit-muted hover:text-white"}`}
+        className={`text-sm ${active ? "font-semibold text-fit-fg" : "font-medium text-fit-muted hover:text-fit-fg"}`}
       >
         {label}
       </span>

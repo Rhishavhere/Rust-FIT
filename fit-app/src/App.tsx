@@ -3,7 +3,6 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 import { FitDashboard } from "./components/FitDashboard";
 import { RightColumnRails } from "./components/RightColumnRails";
-import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { useRecipientRelay } from "./hooks/useFitRelay";
 import { DEMO_PATCHES } from "./lib/demoPatches";
@@ -30,15 +29,6 @@ function parseKeysJson(raw: string): StoredKeys {
   return j;
 }
 
-function getIdentityName(layers: LayersMap): string {
-  const l1 = layers["layer1"];
-  if (l1 && typeof l1 === "object" && "full_name" in (l1 as object)) {
-    const n = (l1 as { full_name?: string }).full_name;
-    if (typeof n === "string" && n) return n;
-  }
-  return "Guy Hawkins archetype";
-}
-
 export default function App() {
   const [mode, setMode] = useState<UiMode>("idle");
   const [fitPath, setFitPath] = useState<string | null>(null);
@@ -56,7 +46,6 @@ export default function App() {
   const [expiresDays, setExpiresDays] = useState(30);
   const [liveTracking, setLiveTracking] = useState(true);
 
-  const personaName = useMemo(() => getIdentityName(layers), [layers]);
   const idShort =
     mode === "owner"
       ? inspect?.fit_id_short
@@ -270,16 +259,16 @@ export default function App() {
                   </p>
                   <ul className="mt-3 list-inside list-disc space-y-2 text-sm leading-relaxed text-fit-muted">
                     <li>
-                      <span className="text-white/90">In this app</span> — load your <code className="text-fit-accent">.fit</code>{" "}
+                      <span className="text-fit-fg/90">In this app</span> — load your <code className="text-fit-accent">.fit</code>{" "}
                       and keys, run the demo delta buttons (JSON patches ship in the binary), export{" "}
                       <code className="text-fit-accent">.fitshare</code>, optional WebSocket relay for live envelopes.
                     </li>
                     <li>
-                      <span className="text-white/90">In a terminal</span> — from the repo root, use{" "}
+                      <span className="text-fit-fg/90">In a terminal</span> — from the repo root, use{" "}
                       <code className="text-fit-accent/90">fit-cli</code> for the same cryptography: generate,{" "}
-                      <code className="text-white/70">apply-delta</code> with a <strong className="text-white/85">patch file</strong>{" "}
-                      (recommended), <code className="text-white/70">verify</code>, <code className="text-white/70">share</code>.
-                      After you open the owner cockpit, expand <strong className="text-white/85">Manual changes</strong> for
+                      <code className="text-fit-fg/70">apply-delta</code> with a <strong className="text-fit-fg/85">patch file</strong>{" "}
+                      (recommended), <code className="text-fit-fg/70">verify</code>, <code className="text-fit-fg/70">share</code>.
+                      After you open the owner cockpit, expand <strong className="text-fit-fg/85">Manual changes</strong> for
                       copy-ready commands tied to your file path.
                     </li>
                   </ul>
@@ -370,7 +359,7 @@ export default function App() {
 function LandingCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="fit-card-glass px-8 py-10">
-      <h2 className="mb-6 text-xl font-semibold tracking-tight text-white">{title}</h2>
+      <h2 className="mb-6 text-xl font-semibold tracking-tight text-fit-fg">{title}</h2>
       {children}
     </section>
   );
@@ -391,7 +380,7 @@ function GhostBtn({ children, onClick }: { children: ReactNode; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className="rounded-xl border border-fit-border px-4 py-2 text-xs font-semibold uppercase tracking-wide text-fit-muted hover:border-fit-accent hover:text-white"
+      className="rounded-xl border border-fit-border px-4 py-2 text-xs font-semibold uppercase tracking-wide text-fit-muted hover:border-fit-accent hover:text-fit-fg"
     >
       {children}
     </button>
@@ -414,7 +403,7 @@ function PrimaryBtn({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`w-full rounded-xl bg-fit-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-black hover:bg-fit-accentDim disabled:opacity-40 ${className}`}
+      className={`w-full rounded-xl bg-fit-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-fit-onAccent hover:bg-fit-accentDim disabled:opacity-40 ${className}`}
     >
       {children}
     </button>
@@ -437,7 +426,7 @@ function PrimaryBtnOutline({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`w-full rounded-xl border border-fit-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-fit-accent hover:bg-fit-accent hover:text-black disabled:opacity-40 ${className}`}
+      className={`w-full rounded-xl border border-fit-accent px-5 py-3 text-sm font-bold uppercase tracking-[0.14em] text-fit-accent hover:bg-fit-accent hover:text-fit-onAccent disabled:opacity-40 ${className}`}
     >
       {children}
     </button>

@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+  --color-fit-bg: 9 9 11;
+  --color-fit-fg: 250 250 250;
+  --color-fit-fg-soft: 212 212 216;
+  --color-fit-panel: 15 15 18;
+  --color-fit-card: 20 20 24;
+  --color-fit-border: 48 48 54;
+  --color-fit-ink: 12 12 15;
+  --color-fit-muted: 161 161 170;
+  --color-fit-accent: 250 250 250;
+  --color-fit-accent-dim: 212 212 216;
+  --color-fit-highlight: 36 36 42;
+  --color-fit-on-accent: 9 9 11;
+  --fit-card-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --color-fit-bg: 244 245 247;
+  --color-fit-fg: 30 41 59;
+  --color-fit-fg-soft: 71 85 105;
+  --color-fit-panel: 255 255 255;
+  --color-fit-card: 255 255 255;
+  --color-fit-border: 220 224 232;
+  --color-fit-ink: 236 239 245;
+  --color-fit-muted: 92 99 112;
+  --color-fit-accent: 23 23 23;
+  --color-fit-accent-dim: 64 64 64;
+  --color-fit-highlight: 240 240 241;
+  --color-fit-on-accent: 250 250 250;
+  --fit-card-shadow:
+    0 4px 24px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
 html,
 body,
 #root {
@@ -9,21 +47,36 @@ body,
 }
 
 body {
-  @apply bg-fit-bg antialiased text-slate-100;
+  @apply bg-fit-bg antialiased text-fit-fg;
+}
+
+[data-theme="light"] .shadow-neon {
+  box-shadow:
+    0 0 18px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+[data-theme="light"] .ring-neon-soft {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 @layer utilities {
   .fit-card-glass {
-    @apply rounded-xl border border-fit-border/90 bg-fit-card shadow-card backdrop-blur-sm;
-    box-shadow:
-      0 4px 24px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(163, 255, 51, 0.04);
+    @apply rounded-xl border border-fit-border/90 bg-fit-card backdrop-blur-sm;
+    box-shadow: var(--fit-card-shadow);
   }
   .text-neon {
-    color: #a3ff33;
-    text-shadow: 0 0 20px rgba(163, 255, 51, 0.25);
+    color: rgb(var(--color-fit-fg));
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.12);
+  }
+  [data-theme="light"] .text-neon {
+    color: rgb(var(--color-fit-fg));
+    text-shadow: none;
   }
   .ring-neon-soft {
-    box-shadow: inset 0 0 0 1px rgba(163, 255, 51, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  [data-theme="light"] .ring-neon-soft {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
   }
 }

@@ -152,19 +152,13 @@ export function AiCopilot(p: Props) {
           </div>
           <div className="min-w-0">
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-fit-accent">FIT Copilot</h2>
-            <p className="mt-1 max-w-xl text-[12px] leading-snug text-fit-muted">
-              Groq-powered Q&amp;A over this cockpit (read-only). Set{" "}
-              <span className="font-mono text-fit-accent/90">GROQ_API_KEY</span> or{" "}
-              <span className="font-mono text-fit-accent/90">VITE_GROQ_API_KEY</span> in{" "}
-              <span className="font-mono text-white/75">fit-app/.env</span> — restart dev after changes.
-            </p>
           </div>
         </div>
         {canClear ? (
           <button
             type="button"
             onClick={() => setTurns([])}
-            className="shrink-0 rounded-lg border border-fit-border/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-fit-muted transition hover:border-fit-accent/50 hover:text-white"
+            className="shrink-0 rounded-lg border border-fit-border/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-fit-muted transition hover:border-fit-accent/50 hover:text-fit-fg"
           >
             Clear
           </button>
@@ -184,7 +178,7 @@ export function AiCopilot(p: Props) {
                   type="button"
                   disabled={disabledInput}
                   onClick={() => setDraft(label)}
-                  className="max-w-full rounded-full border border-fit-border/70 bg-black/30 px-3 py-1.5 text-left text-[11px] leading-snug text-white/80 transition hover:border-fit-accent/45 hover:bg-fit-accent/10 disabled:opacity-40"
+                  className="max-w-full rounded-full border border-fit-border/70 bg-fit-fg/[0.06] px-3 py-1.5 text-left text-[11px] leading-snug text-fit-fg/80 transition hover:border-fit-accent/45 hover:bg-fit-accent/10 disabled:opacity-40"
                 >
                   {label}
                 </button>
@@ -195,9 +189,9 @@ export function AiCopilot(p: Props) {
           turns.map((t, i) =>
             t.role === "user" ? (
               <div key={`u-${i}`} className="flex justify-end">
-                <div className="max-w-[min(100%,28rem)] rounded-2xl rounded-br-md border border-fit-accent/28 bg-fit-accent/[0.12] px-4 py-3 shadow-[inset_0_1px_0_rgba(163,255,51,0.06)]">
+                <div className="max-w-[min(100%,28rem)] rounded-2xl rounded-br-md border border-fit-accent/25 bg-fit-accent/[0.08] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                   <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-fit-accent/80">You</p>
-                  <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-white/92">{t.content}</p>
+                  <p className="mt-1.5 whitespace-pre-wrap text-[13px] leading-relaxed text-fit-fg/92">{t.content}</p>
                 </div>
               </div>
             ) : (
@@ -215,7 +209,7 @@ export function AiCopilot(p: Props) {
                   className={`max-w-[min(100%,36rem)] flex-1 rounded-2xl rounded-bl-md border px-4 py-3 ${
                     t.isError
                       ? "border-amber-500/30 bg-amber-950/25"
-                      : "border-fit-border/70 bg-black/40"
+                      : "border-fit-border/70 bg-fit-fg/[0.06]"
                   }`}
                 >
                   <p
@@ -239,7 +233,7 @@ export function AiCopilot(p: Props) {
             <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-fit-border/80 bg-fit-ink/55">
               <CopilotIcon className="h-4 w-4 opacity-50" />
             </div>
-            <div className="rounded-2xl rounded-bl-md border border-fit-border/60 bg-black/35 px-4 py-3">
+            <div className="rounded-2xl rounded-bl-md border border-fit-border/60 bg-fit-fg/[0.04] px-4 py-3">
               <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-fit-muted">Assistant</p>
               <p className="mt-2 flex items-center gap-2 text-[12px] text-fit-muted">
                 <TypingDots />
@@ -259,7 +253,7 @@ export function AiCopilot(p: Props) {
         <textarea
           id="copilot-message"
           rows={3}
-          className="w-full resize-y rounded-xl border border-fit-border/90 bg-fit-bg/95 px-4 py-3 font-sans text-[13px] leading-relaxed text-white shadow-inner outline-none ring-0 transition placeholder:text-fit-muted/70 focus:border-fit-accent/45 focus:shadow-[0_0_0_3px_rgba(163,255,51,0.12)]"
+          className="w-full resize-y rounded-xl border border-fit-border/90 bg-fit-bg/95 px-4 py-3 font-sans text-[13px] leading-relaxed text-fit-fg shadow-inner outline-none ring-0 transition placeholder:text-fit-muted/70 focus:border-fit-accent/45 focus:ring-2 focus:ring-fit-accent/25"
           placeholder={
             p.cockpitBusy
               ? "Wait until loading finishes…"
@@ -281,7 +275,7 @@ export function AiCopilot(p: Props) {
             type="button"
             disabled={thinking || !draft.trim() || p.cockpitBusy}
             onClick={() => void send()}
-            className="rounded-xl bg-fit-accent px-8 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-black transition hover:bg-fit-accentDim disabled:opacity-40"
+            className="rounded-xl bg-fit-accent px-8 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-fit-onAccent transition hover:bg-fit-accentDim disabled:opacity-40"
           >
             Send
           </button>

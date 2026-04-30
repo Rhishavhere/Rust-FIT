@@ -51,7 +51,7 @@ function formatInlineSegment(text: string): ReactNode[] {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
       return (
-        <strong key={i} className="font-semibold text-white/95">
+        <strong key={i} className="font-semibold text-fit-fg/95">
           {part.slice(2, -2)}
         </strong>
       );
@@ -136,7 +136,7 @@ function renderProseChunk(chunk: string): ReactNode[] {
           className="mb-3 ml-0 list-none space-y-1.5 border-l-2 border-fit-accent/25 pl-3 last:mb-0"
         >
           {items.map((item, j) => (
-            <li key={j} className="text-[13px] leading-relaxed text-white/88">
+            <li key={j} className="text-[13px] leading-relaxed text-fit-fg/88">
               <span className="mr-1.5 text-fit-accent/70">·</span>
               {formatInlineSegment(item)}
             </li>
@@ -155,7 +155,7 @@ function renderProseChunk(chunk: string): ReactNode[] {
       out.push(
         <ol key={`ol-${out.length}`} className="mb-3 ml-4 list-decimal space-y-1.5 last:mb-0">
           {items.map((item, j) => (
-            <li key={j} className="pl-1 text-[13px] leading-relaxed text-white/88 marker:text-fit-accent/80">
+            <li key={j} className="pl-1 text-[13px] leading-relaxed text-fit-fg/88 marker:text-fit-accent/80">
               {formatInlineSegment(item)}
             </li>
           ))}
@@ -190,10 +190,10 @@ export function FormattedAssistantBody({ text, isError }: { text: string; isErro
 
   const chunks = splitCodeAndProse(text.trim());
   return (
-    <div className="assistant-md space-y-3 text-[13px] leading-relaxed text-white/88">
+    <div className="assistant-md space-y-3 text-[13px] leading-relaxed text-fit-fg/88">
       {chunks.map((seg, k) =>
         seg.type === "code" ? (
-          <div key={k} className="overflow-x-auto rounded-lg border border-fit-border/60 bg-black/50">
+          <div key={k} className="overflow-x-auto rounded-lg border border-fit-border/60 bg-fit-ink/80">
             {seg.lang ? (
               <p className="border-b border-fit-border/50 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-fit-muted">
                 {seg.lang}

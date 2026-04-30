@@ -65,7 +65,7 @@ export function HeldDataTables({ layer2, layer3, layer5 }: { layer2: unknown; la
   return (
     <div className="fit-card-glass overflow-hidden">
       <div className="flex flex-wrap gap-2 border-b border-fit-border/80 px-4 py-3">
-        <span className="text-sm font-medium text-slate-300">Portfolio & obligations</span>
+        <span className="text-sm font-medium text-fit-fgSoft">Portfolio & obligations</span>
         <TabBtn active={tab === "portfolio"} onClick={() => setTab("portfolio")}>
           Holdings
         </TabBtn>
@@ -93,7 +93,7 @@ export function HeldDataTables({ layer2, layer3, layer5 }: { layer2: unknown; la
                 key={`${r.name}-${i}`}
                 className="border-t border-fit-border/60 transition hover:bg-fit-highlight/35"
               >
-                <td className="max-w-[200px] px-4 py-2.5 text-slate-200">{r.name}</td>
+                <td className="max-w-[200px] px-4 py-2.5 text-fit-fgSoft">{r.name}</td>
                 <td className="px-4 py-2.5 font-mono text-sm text-fit-accent">{r.col2}</td>
                 <td className="px-4 py-2.5 text-xs text-fit-muted">{r.col3}</td>
               </tr>
@@ -120,8 +120,8 @@ function TabBtn({
       onClick={onClick}
       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
         active
-          ? "bg-fit-accent text-black shadow-neon"
-          : "border border-fit-border bg-fit-ink/50 text-fit-muted hover:text-slate-200"
+          ? "bg-fit-accent text-fit-onAccent shadow-neon"
+          : "border border-fit-border bg-fit-ink/50 text-fit-muted hover:text-fit-fgSoft"
       }`}
     >
       {children}
