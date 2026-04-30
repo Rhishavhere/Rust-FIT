@@ -18,8 +18,10 @@ import {
   parseLayer5,
 } from "../lib/fitMetrics";
 import type { DeltaRow, InspectInfo, LayersMap, ShareMeta } from "../lib/fitTypes";
+import type { RelayConnStatus, RelayInbound } from "../lib/relay";
 import { DEMO_PATCHES } from "../lib/demoPatches";
 import { badgeText, isoDate } from "../lib/fmt";
+import { AiCopilot } from "./AiCopilot";
 
 type Mode = "owner" | "recipient";
 
@@ -42,6 +44,9 @@ type Props = {
   liveTracking: boolean;
   setLiveTracking: (v: boolean) => void;
   exportShare: () => void | Promise<void>;
+  relayUrl: string;
+  relaySubscriptionStatus: RelayConnStatus;
+  relayInboundRecent: RelayInbound[];
   onDemoDelta: (
     key: keyof typeof DEMO_PATCHES,
     layerId: number,
@@ -313,6 +318,21 @@ export function FitDashboard(p: Props) {
         ) : (
           <LockedCard layerId={3} title="Portfolio surface" />
         )}
+      </div>
+
+      <div className="px-8 pb-4">
+        <AiCopilot
+          mode={p.mode}
+          inspect={p.inspect}
+          shareMeta={p.shareMeta}
+          layers={p.layers}
+          deltas={p.deltas}
+          verifyOk={p.verifyOk}
+          relayUrl={p.relayUrl}
+          relaySubscriptionStatus={p.relaySubscriptionStatus}
+          relayInboundRecent={p.relayInboundRecent}
+          cockpitBusy={p.busy != null}
+        />
       </div>
 
       {p.mode === "recipient" && p.shareMeta && (

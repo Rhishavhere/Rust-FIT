@@ -7,7 +7,7 @@ use fit_core::{
     apply_json_patch_delta, create_share_envelope, materialize_fit, open_share_envelope,
     parse_fit, verify_signature,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[tauri::command]
 pub fn fit_read_utf8(path: String) -> Result<String, String> {
@@ -177,6 +177,144 @@ pub fn fit_apply_delta_json_patch(
         apply_json_patch_delta(&raw, &ms, &sk, layer_id, &patch, &summary, att).map_err(map_err)?;
     std::fs::write(&file_path, &updated).map_err(map_err)?;
     Ok(())
+}
+
+const GROQ_CHAT_URL: &str = "https://api.groq.com/openai/v1/chat/completions";
+
+const SYSTEM_PROMPT: &str = r#"You are FIT Copilot — a read-only analyst for the Financial Identity Token (FIT) desktop cockpit.
+
+Rules:
+• Use ONLY the CONTEXT_JSON blob and the user's messages. Nothing else counts as factual.
+• In recipient/investor mode, treat missing/absent planes as intentionally undisclosed ("not disclosed in this envelope"). Never invent hidden numbers.
+• Prefer concise, factual summaries: credit, liquidity, NAV, income GST line, ventures, deltas, relay feed.
+• If asked something not answerable from context, say you cannot infer it.
+• Do not output shell commands or instructions to mutate the FIT token; you analyze only."#;
+
+#[derive(Debug, Deserialize)]
+pub struct AiChatTurn {
+    pub role: String,
+    pub content: String,
+}
+
+fn normalize_env_value(raw: String) -> String {
+    raw.trim()
+        .trim_matches('"')
+        .trim_matches('\'')
+        .to_string()
+}
+
+fn groq_assistant_text(choice: &serde_json::Value) -> Option<String> {
+    let msg = choice.get("message")?;
+    let c = msg.get("content")?;
+    if let Some(s) = c.as_str() {
+        if !s.is_empty() {
+            return Some(s.to_string());
+        }
+    }
+    let arr = c.as_array()?;
+    let mut out = String::new();
+    for part in arr {
+        if let Some(t) = part.get("text").and_then(|x| x.as_str()) {
+            out.push_str(t);
+        } else if let Some(s) = part.as_str() {
+            out.push_str(s);
+        }
+    }
+    if out.is_empty() {
+        None
+    } else {
+        Some(out)
+    }
+}
+
+fn groq_env_pick(keys: &[&str]) -> Option<String> {
+    for key in keys {
+        if let Ok(val) = std::env::var(key) {
+            let s = normalize_env_value(val);
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
+    }
+    None
+}
+
+/// Groq OpenAI-compatible chat. `fit-app/.env` is loaded in `main.rs` before handlers run.
+#[tauri::command]
+pub fn fit_ai_chat(history: Vec<AiChatTurn>, context: serde_json::Value) -> Result<String, String> {
+    let api_key = groq_env_pick(&["GROQ_API_KEY", "VITE_GROQ_API_KEY"]).ok_or_else(|| {
+        "Missing Groq API key — set `GROQ_API_KEY` or `VITE_GROQ_API_KEY` in fit-app/.env and restart.".to_string()
+    })?;
+
+    let model = groq_env_pick(&["GROQ_MODEL", "VITE_GROQ_MODEL"])
+        .unwrap_or_else(|| "llama-3.3-70b-versatile".to_string());
+
+    let mut ctx_str = serde_json::to_string(&context).map_err(map_err)?;
+    const MAX_CTX: usize = 140_000;
+    if ctx_str.len() > MAX_CTX {
+        ctx_str.truncate(MAX_CTX);
+        ctx_str.push_str("…[CONTEXT truncated for model limit]");
+    }
+
+    let system_body = format!(
+        "{SYSTEM_PROMPT}\n\nCONTEXT_JSON (trusted local materialization only):\n```json\n{ctx_str}\n```"
+    );
+
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .build()
+        .map_err(map_err)?;
+
+    let mut msgs: Vec<serde_json::Value> = vec![
+        serde_json::json!({ "role": "system", "content": system_body }),
+    ];
+
+    for t in history {
+        let role = if t.role.to_lowercase() == "assistant" {
+            "assistant"
+        } else {
+            "user"
+        };
+        msgs.push(serde_json::json!({
+            "role": role,
+            "content": t.content,
+        }));
+    }
+
+    let body = serde_json::json!({
+        "model": model,
+        "messages": msgs,
+        "temperature": 0.25,
+        "max_tokens": 4096,
+    });
+
+    let resp = client
+        .post(GROQ_CHAT_URL)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .map_err(|e| format!("Groq request failed: {e}"))?;
+
+    let status = resp.status();
+    let txt = resp.text().map_err(|e| format!("read body: {e}"))?;
+
+    if !status.is_success() {
+        return Err(format!("Groq HTTP {status}: {txt}"));
+    }
+
+    let v: serde_json::Value =
+        serde_json::from_str(&txt).map_err(|e| format!("Groq JSON parse: {e} — body head: {:.200}", txt))?;
+
+    let first = v["choices"].get(0).ok_or_else(|| {
+        format!("unexpected Groq response (no choices): {}", &txt[..txt.len().min(500)])
+    })?;
+
+    let content = groq_assistant_text(first).ok_or_else(|| {
+        format!("unexpected Groq response shape: {}", &txt[..txt.len().min(500)])
+    })?;
+
+    Ok(content)
 }
 
 #[tauri::command]

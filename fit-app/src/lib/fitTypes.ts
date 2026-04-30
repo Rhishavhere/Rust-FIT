@@ -32,3 +32,9 @@ export type ShareMeta = {
   expires_at: number;
   live_tracking: boolean;
 };
+
+/** Groq/chat payload — echoed to Rust `AiChatTurn`. */
+export type AiChatTurn = {
+  role: "user" | "assistant";
+  content: string;
+};

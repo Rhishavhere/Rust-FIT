@@ -341,6 +341,11 @@ export default function App() {
                 setLiveTracking={setLiveTracking}
                 exportShare={exportShare}
                 onDemoDelta={onDemoDelta}
+                relayUrl={RELAY_WS_URL}
+                relaySubscriptionStatus={
+                  mode === "recipient" ? relayRecipientStatus : "off"
+                }
+                relayInboundRecent={relayInbound}
               />
             )}
           </div>

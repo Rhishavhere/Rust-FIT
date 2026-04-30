@@ -1,10 +1,21 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AiChatTurn,
   DeltaRow,
   InspectInfo,
   LayersMap,
   ShareMeta,
 } from "./fitTypes";
+
+export async function fitAiChat(params: {
+  history: AiChatTurn[];
+  context: Record<string, unknown>;
+}): Promise<string> {
+  return invoke<string>("fit_ai_chat", {
+    history: params.history.map((h) => ({ role: h.role, content: h.content })),
+    context: params.context,
+  });
+}
 
 export async function readUtf8(path: string): Promise<string> {
   return invoke<string>("fit_read_utf8", { path });
