@@ -17,6 +17,18 @@ export async function fitAiChat(params: {
   });
 }
 
+export async function fitAgentChat(params: {
+  history: AiChatTurn[];
+  context: Record<string, unknown>;
+  agentId: string;
+}): Promise<string> {
+  return invoke<string>("fit_agent_chat", {
+    history: params.history.map((h) => ({ role: h.role, content: h.content })),
+    context: params.context,
+    agentId: params.agentId,
+  });
+}
+
 export async function readUtf8(path: string): Promise<string> {
   return invoke<string>("fit_read_utf8", { path });
 }

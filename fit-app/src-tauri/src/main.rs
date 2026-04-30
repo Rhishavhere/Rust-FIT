@@ -34,6 +34,7 @@ fn main() {
             fit_create_share,
             fit_delta_summaries,
             fit_ai_chat,
+            fit_agent_chat,
         ])
         .run(tauri::generate_context!())
         .expect("FIT Tauri bootstrap");

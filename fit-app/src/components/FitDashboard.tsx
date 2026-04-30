@@ -17,10 +17,11 @@ import {
   parseLayer2,
   parseLayer5,
 } from "../lib/fitMetrics";
-import type { DeltaRow, InspectInfo, LayersMap, ShareMeta } from "../lib/fitTypes";
+import type { DeltaRow, InspectInfo, LayersMap, ShareMeta, StoredKeys } from "../lib/fitTypes";
 import type { RelayConnStatus, RelayInbound } from "../lib/relay";
 import { DEMO_PATCHES } from "../lib/demoPatches";
 import { badgeText, isoDate } from "../lib/fmt";
+import { AgentDeck } from "./AgentDeck";
 import { AiCopilot } from "./AiCopilot";
 
 type Mode = "owner" | "recipient";
@@ -53,6 +54,10 @@ type Props = {
     summary: string,
     attester: string
   ) => Promise<void>;
+  keysJson: StoredKeys | null;
+  onOwnerRefresh: () => Promise<void>;
+  setBusy: (s: string | null) => void;
+  onAgentError: (msg: string | null) => void;
 };
 
 function allow(mode: Mode, id: number, permitted: number[] | undefined): boolean {
@@ -225,22 +230,43 @@ export function FitDashboard(p: Props) {
             ITR plane locked · Layer 4
           </div>
         )}
-        <div className="fit-card-glass flex min-h-[260px] flex-col items-center justify-center px-8 text-center">
+        <div className="fit-card-glass flex min-h-[260px] flex-col items-stretch px-4 py-6 text-center sm:px-6">
           <span className="text-[10px] uppercase tracking-[0.4em] text-fit-muted">premium ring</span>
-          <p className="mt-6 text-3xl font-semibold text-fit-accent">
+          <p className="mt-4 text-3xl font-semibold text-fit-accent">
             {fitScore ?? "—"}
             <span className="text-sm text-fit-fg/60"> FIT</span>
           </p>
-          <p className="mt-3 text-xs leading-relaxed text-fit-muted">
+          <p className="mt-2 text-xs leading-relaxed text-fit-muted">
             Holistic trust index — header materialized at genesis.
           </p>
-          <button
-            type="button"
-            disabled
-            className="mt-10 rounded-2xl border border-fit-accent/40 px-10 py-2.5 text-[10px] font-bold uppercase tracking-[0.35em] text-fit-accent opacity-60"
-          >
-            agent deck soon
-          </button>
+          {p.mode === "owner" && p.inspect ? (
+            <AgentDeck
+              inspect={p.inspect}
+              layers={p.layers}
+              deltas={p.deltas}
+              verifyOk={p.verifyOk}
+              fitPath={p.fitPath}
+              keysJson={p.keysJson}
+              recipientPub={p.recipientPub}
+              setRecipientPub={p.setRecipientPub}
+              shareLayers={p.shareLayers}
+              setShareLayers={p.setShareLayers}
+              expiresDays={p.expiresDays}
+              setExpiresDays={p.setExpiresDays}
+              liveTracking={p.liveTracking}
+              setLiveTracking={p.setLiveTracking}
+              onDemoDelta={p.onDemoDelta}
+              onOwnerRefresh={p.onOwnerRefresh}
+              cockpitBusy={p.busy != null}
+              setBusy={p.setBusy}
+              onError={p.onAgentError}
+            />
+          ) : (
+            <p className="mt-8 self-center max-w-xs text-[11px] text-fit-muted">
+              <strong className="text-fit-fg/90">Agent deck</strong> — owner cockpit only: selective .fitshare, demo deltas,
+              and verify via Groq JSON agents.
+            </p>
+          )}
         </div>
       </div>
 

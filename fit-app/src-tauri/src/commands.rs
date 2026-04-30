@@ -317,6 +317,126 @@ pub fn fit_ai_chat(history: Vec<AiChatTurn>, context: serde_json::Value) -> Resu
     Ok(content)
 }
 
+const AGENT_JSON_SCHEMA: &str = r#"You control the FIT desktop app through structured actions (same cryptography as `fit-cli`).
+
+Output rules:
+• Reply with ONE JSON object only. No markdown fences, no text before or after.
+• Keys: "message" (string, user-facing) and "actions" (array; use [] if nothing to run).
+
+Each action is one of:
+{"type":"create_share","recipient_x25519_pub_hex":"<64 hex chars, or empty string to use context.share_form.recipient_pub>","layers_csv":"<comma-separated layer ids 1-6, no spaces>","expires_days":<positive int>,"live_tracking":<bool>,"investor_display_name":"<optional human name for narration>"}
+{"type":"run_verify"}
+{"type":"apply_demo_delta","demo_key":"<sellReliance|openFd200k|refreshCibil|fileGstQ1|newAngel>"}
+
+Layer hints for layers_csv:
+1 identity · 2 credit/CIBIL/obligations · 3 assets/NAV/portfolio · 4 income/GST/ITR · 5 ventures/investments/trading · 6 attestations/access log.
+
+If the user did not provide a recipient X25519 public key and context.share_form.recipient_pub is empty, set recipient_x25519_pub_hex to "" and explain in message what is needed."#;
+
+fn agent_persona_tail(agent_id: &str) -> &'static str {
+    match agent_id {
+        "share_desk" => {
+            r#"Persona: Share desk — you package selective .fitshare envelopes for investors.
+When the user asks to prepare/share/export a package, use create_share with correct layers and expiry.
+If they name an investor, put the name in investor_display_name."#
+        }
+        "delta_desk" => {
+            r#"Persona: Delta desk — you run bounded demo JSON-patch deltas (same as the Demo deltas buttons) and verify.
+Use apply_demo_delta only with the exact demo_key literals from the schema. Use run_verify when asked about integrity."#
+        }
+        "audit_desk" => {
+            r#"Persona: Audit desk — chain integrity, deltas, and verify. Prefer run_verify for signature/Merkle checks.
+Avoid apply_demo_delta unless the user explicitly asks to apply a listed demo patch."#
+        }
+        _ => {
+            r#"Persona: General FIT operator — use actions when they clearly match the user's intent."#
+        }
+    }
+}
+
+/// Agent turn: returns JSON string `{"message":"...","actions":[...]}`. Frontend parses and executes actions via IPC.
+#[tauri::command]
+pub fn fit_agent_chat(
+    history: Vec<AiChatTurn>,
+    context: serde_json::Value,
+    agent_id: String,
+) -> Result<String, String> {
+    let api_key = groq_env_pick(&["GROQ_API_KEY", "VITE_GROQ_API_KEY"]).ok_or_else(|| {
+        "Missing Groq API key — set `GROQ_API_KEY` or `VITE_GROQ_API_KEY` in fit-app/.env and restart.".to_string()
+    })?;
+
+    let model = groq_env_pick(&["GROQ_MODEL_AGENT", "GROQ_MODEL", "VITE_GROQ_MODEL"])
+        .unwrap_or_else(|| "llama-3.3-70b-versatile".to_string());
+
+    let mut ctx_str = serde_json::to_string(&context).map_err(map_err)?;
+    const MAX_CTX: usize = 120_000;
+    if ctx_str.len() > MAX_CTX {
+        ctx_str.truncate(MAX_CTX);
+        ctx_str.push_str("…[CONTEXT truncated]");
+    }
+
+    let persona = agent_persona_tail(agent_id.trim());
+    let system_body = format!(
+        "{AGENT_JSON_SCHEMA}\n\n{persona}\n\nCONTEXT_JSON:\n```json\n{ctx_str}\n```"
+    );
+
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(120))
+        .build()
+        .map_err(map_err)?;
+
+    let mut msgs: Vec<serde_json::Value> =
+        vec![serde_json::json!({ "role": "system", "content": system_body })];
+
+    for t in history {
+        let role = if t.role.to_lowercase() == "assistant" {
+            "assistant"
+        } else {
+            "user"
+        };
+        msgs.push(serde_json::json!({
+            "role": role,
+            "content": t.content,
+        }));
+    }
+
+    let body = serde_json::json!({
+        "model": model,
+        "messages": msgs,
+        "temperature": 0.1,
+        "max_tokens": 2048,
+        "response_format": { "type": "json_object" },
+    });
+
+    let resp = client
+        .post(GROQ_CHAT_URL)
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .map_err(|e| format!("Groq request failed: {e}"))?;
+
+    let status = resp.status();
+    let txt = resp.text().map_err(|e| format!("read body: {e}"))?;
+
+    if !status.is_success() {
+        return Err(format!("Groq HTTP {status}: {txt}"));
+    }
+
+    let v: serde_json::Value =
+        serde_json::from_str(&txt).map_err(|e| format!("Groq JSON parse: {e} — body head: {:.200}", txt))?;
+
+    let first = v["choices"].get(0).ok_or_else(|| {
+        format!("unexpected Groq response (no choices): {}", &txt[..txt.len().min(500)])
+    })?;
+
+    let content = groq_assistant_text(first).ok_or_else(|| {
+        format!("unexpected Groq response shape: {}", &txt[..txt.len().min(500)])
+    })?;
+
+    Ok(content)
+}
+
 #[tauri::command]
 pub fn fit_create_share(
     file_path: String,

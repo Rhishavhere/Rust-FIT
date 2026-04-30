@@ -329,6 +329,12 @@ export default function App() {
                 setLiveTracking={setLiveTracking}
                 exportShare={exportShare}
                 onDemoDelta={onDemoDelta}
+                keysJson={keysJson}
+                onOwnerRefresh={async () => {
+                  if (fitPath && keysJson) await refreshDashboard(fitPath, "owner", keysJson);
+                }}
+                setBusy={setBusy}
+                onAgentError={setError}
                 relayUrl={RELAY_WS_URL}
                 relaySubscriptionStatus={
                   mode === "recipient" ? relayRecipientStatus : "off"
