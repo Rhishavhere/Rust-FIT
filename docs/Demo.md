@@ -1,224 +1,272 @@
-Here is your **`demo.md`** file ready to copy/save:
+# FIT Demo Walkthrough (CLI + Desktop + Two Laptops)
 
----
+This guide walks through the **sample persona** (`priya`), **CLI inspection and verification**, **optional deltas**, **sharing to a recipient**, and **LAN relay** so a second laptop can subscribe to updates. Paths use **PowerShell** and backslashes (`\`); from macOS/Linux, use `/` instead and the same `cargo`/`npm` commands.
 
-````md
-# FIT Demo Setup (Two Laptops)
+Assume **repository root**:
 
----
-
-## 0. Prerequisites (both laptops)
-
-- Rust toolchain installed  
-- Node.js (for `fit-app`)  
-- Python 3 + `websockets` (`fit-relay/requirements.txt`)  
-- Same network (WiFi LAN) OR firewall allows TCP `8765`  
-- Repo built:
-
-```bash
-cargo build -p fit-cli
-````
-
-Or run directly:
-
-```bash
-cargo run -p fit-cli -- ...
+```powershell
+cd C:\path\to\Rust-FIT
 ```
 
 ---
 
-# 💻 Laptop A — Owner (Priya)
+## 1. Prerequisites
 
-## 1. Generate the owner FIT + keys
+```powershell
+rustc --version
+node --version
+python --version
+```
 
-```bash
-cd C:\Users\freak\Rust-FIT
+- **Rust** — `cargo`, `rustc`
+- **Node.js** — for `fit-app` (desktop UI)
+- **Python 3** — for `fit-relay` (optional live WebSocket fan-out)
+
+---
+
+## 2. Build the CLI
+
+From the repo root:
+
+```powershell
+cargo build -p fit-cli
+```
+
+Run without a binary install via:
+
+```powershell
+cargo run -p fit-cli -- <subcommand> ...
+```
+
+---
+
+## 3. Demo directory and genesis FIT (`priya`)
+
+Create a folder for demo artifacts:
+
+```powershell
 mkdir demo -Force
+```
+
+Generate a **`priya`** identity token plus a **key bundle** (Ed25519 signing, master secret for decryption, X25519 for transport/sharing wiring):
+
+```powershell
 cargo run -p fit-cli -- generate --persona priya -o demo\priya.fit -k demo\priya.keys.json
 ```
 
-⚠️ Keep `demo\priya.keys.json` **private**
-(It contains `master_secret_hex` + signing + X25519 keys)
+**Keep `demo\priya.keys.json` private** — it contains `master_secret_hex`, signing seed, and X25519 secret material.
 
 ---
 
-## 2. Sanity-check the file (optional but recommended)
+## 4. Inspect (metadata, no decryption)
 
-```bash
+```powershell
 cargo run -p fit-cli -- inspect demo\priya.fit
 ```
 
-```bash
+You should see FIT ID (short), display name, score, layer count, delta count, and owner public key (hex).
+
+---
+
+## 5. Verify (Merkle / signature)
+
+```powershell
 cargo run -p fit-cli -- verify demo\priya.fit
 ```
 
-```bash
+On success the CLI prints that the signature check passed.
+
+---
+
+## 6. Open (owner — decrypt and print materialized layers)
+
+Uses `master_secret_hex` from the key file:
+
+```powershell
 cargo run -p fit-cli -- open demo\priya.fit -k demo\priya.keys.json
 ```
 
+Output is JSON: `layer1` … `layer6` with decrypted plane contents.
+
 ---
 
-## 3. Run FIT Desktop App (Owner Dashboard)
+## 7. Apply a delta from the terminal (optional)
 
-```bash
+Prefer **`--patch-file`** so you avoid fragile inline JSON in PowerShell. Example: small CIBIL tweak on **layer 2** (matches the patterns in `fit-app\src\lib\demoPatches.ts`).
+
+Create a patch file:
+
+```powershell
+Set-Content -Path demo\patch-cibil.json -Value '[{"op":"replace","path":"/cibil_score","value":762}]' -NoNewline
+```
+
+Apply it:
+
+```powershell
+cargo run -p fit-cli -- apply-delta demo\priya.fit -k demo\priya.keys.json --layer 2 --summary "CIBIL refresh (demo CLI)" --patch-file demo\patch-cibil.json --attester cibil
+```
+
+Re-verify:
+
+```powershell
+cargo run -p fit-cli -- verify demo\priya.fit
+```
+
+Larger demos (sell Reliance, FD, GST, angel round) use the **same** JSON Patch arrays as **Manual changes** in the desktop app (`fit-app\src\lib\demoPatches.ts`); copy one array into `demo\my-patch.json` and pass `--patch-file demo\my-patch.json` with the correct `--layer` and `--summary`.
+
+---
+
+## 8. Full CLI smoke script (single machine)
+
+The repo ships an integration script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File test_all.ps1
+```
+
+---
+
+## 9. Desktop app — owner cockpit
+
+Install and run:
+
+```powershell
 cd fit-app
 npm install
 npm run tauri dev
 ```
 
-### In the app:
+In the UI:
 
-* Select `demo\priya.fit`
-* Select `demo\priya.keys.json`
-* Load **Owner Dashboard**
+1. Open **`demo\priya.fit`**
+2. Select **`demo\priya.keys.json`**
+3. Load the **Owner** dashboard — use **demo delta** buttons or the **Manual CLI** panel (same patches as §7).
 
-👉 Try demo delta buttons (they update the `.fit` file)
+**Optional — FIT Copilot (Groq):** create `fit-app\.env`, set `VITE_GROQ_API_KEY` and optionally `VITE_GROQ_MODEL`; restart **`npm run tauri dev`** so the Rust side loads `.env` at startup.
 
 ---
 
-# 💻 Laptop B — Investor / Recipient (Rajiv)
+# Two laptops — Investor (`rajiv`) and share file
 
-## 4. Create recipient keys
+## 10. Laptop B — recipient keys
 
-```bash
+On the **investor** machine:
+
+```powershell
 cargo run -p fit-cli -- keygen -o demo\rajiv.keys.json
 ```
 
-👉 CLI prints **X25519 public key (hex)**
-Copy this to Laptop A
+The CLI prints **X25519 pubkey** (hex). Copy that **64 character hex** to Laptop A for the `share` command.
 
-⚠️ Keep `demo\rajiv.keys.json` private
-(It contains `x25519_static_secret_hex`)
+**Keep `demo\rajiv.keys.json` private.**
 
 ---
 
-# 💻 Laptop A — Create `.fitshare`
+## 11. Laptop A — export a `.fitshare` envelope
 
-## 5. Export share envelope (example: layers 2,3)
+Replace `RECIPIENT_X25519_HEX` with the hex from §10. Example: share **layers 2 and 3**, 30-day expiry, live tracking enabled:
 
-```bash
-cargo run -p fit-cli -- share demo\priya.fit -k demo\priya.keys.json --layers 2,3 --recipient "<PASTE_RAJIV_X25519_PUBKEY_HEX>" --expires-days 30 --live-tracking -o demo\priya_for_rajiv.fitshare
+```powershell
+cargo run -p fit-cli -- share demo\priya.fit -k demo\priya.keys.json --layers 2,3 --recipient RECIPIENT_X25519_HEX --expires-days 30 --live-tracking -o demo\priya_for_rajiv.fitshare
 ```
+
+**Do not** share `master_secret` or the owner key file — only the `.fitshare` envelope by an agreed channel (USB, encrypted share, etc.).
 
 ---
 
-## 6. Transfer `.fitshare` to Laptop B
+## 12. Laptop B — open the share in the app
 
-Use:
+The **CLI does not** materialize `.fitshare` files the same way as owner `.fit` — use the **desktop app**:
 
-* USB
-* Encrypted drive
-* Signal / secure transfer
-
-👉 File to send:
-
-```
-demo\priya_for_rajiv.fitshare
-```
-
-⚠️ Owner NEVER shares `master_secret`
-
----
-
-# 💻 Laptop B — Open the share
-
-## 7. Run Desktop App (Investor Mode)
-
-```bash
+```powershell
 cd fit-app
 npm install
 npm run tauri dev
 ```
 
-### In the app:
-
-* Open: `demo\priya_for_rajiv.fitshare`
-* Select: `demo\rajiv.keys.json`
-* Load **Investor View**
-
-👉 Only permitted layers visible
-👉 Others appear **locked**
-
-⚠️ CLI does NOT support opening `.fitshare`
-→ Use Tauri app
+1. Open **`demo\priya_for_rajiv.fitshare`**
+2. Select **`demo\rajiv.keys.json`**
+3. Load **Investor** view — only permitted layers decrypt; others stay locked.
 
 ---
 
-# 🌐 Relay Server (Live Sync)
+# LAN relay (owner pushes, investor receives)
 
-## 8. Start relay (on one laptop, usually A)
+The relay defaults to **all interfaces** (`0.0.0.0`) on port **8765** so other devices on the Wi-Fi/LAN can connect. Override with `FIT_RELAY_HOST` / `FIT_RELAY_PORT` if needed.
 
-```bash
-cd C:\Users\freak\Rust-FIT
+## 13. Start the relay (often on Laptop A)
+
+From repo root:
+
+```powershell
 python -m venv venv
 ```
 
-```bash
+```powershell
 .\venv\Scripts\pip install -r fit-relay\requirements.txt
 ```
 
-```bash
+```powershell
 .\venv\Scripts\python fit-relay\relay_server.py
 ```
 
----
+Leave this running. Note the log line that tells you to use **`ws://<this-host-LAN-ip>:8765`** for remote clients.
 
-## 🔧 Allow LAN access (IMPORTANT)
-
-By default:
-
-```
-127.0.0.1:8765  ❌ (local only)
-```
-
-### Fix:
-
-Edit `relay_server.py`:
-
-```python
-websockets.serve(handler, "0.0.0.0", 8765)
-```
+**Firewall:** allow inbound **TCP 8765** on the machine running the relay (or use the same machine for both roles with `ws://127.0.0.1:8765` only for local tests).
 
 ---
 
-## 🌍 Connect from Laptop B
+## 14. Point the investor app at the relay (Laptop B)
 
-Use:
+On **Laptop B**, set the Vite relay URL **before** starting the dev server (so it is bundled). In `fit-app\.env`:
 
-```
-ws://<LAPTOP_A_IP>:8765
+```env
+VITE_RELAY_WS=ws://192.168.x.x:8765
 ```
 
-Example:
+Use **`192.168.x.x`** = Laptop **A’s** LAN IPv4 address (not `127.0.0.1` on B).
 
+Then:
+
+```powershell
+cd fit-app
+npm run tauri dev
 ```
-ws://192.168.1.42:8765
-```
+
+The investor dashboard connects to this WebSocket URL for **`SUBSCRIBE`** to the envelope’s **`fit_id`** (shown in Inspect / investor UI).
 
 ---
 
-# 🔁 Result
+## 15. What you should observe
 
-* Owner pushes delta
-* Relay broadcasts
-* Investor receives update live
-
----
-
-# ✅ Done
-
-You now have:
-
-* `.fit` generation
-* `.fitshare` secure sharing
-* Cross-laptop connection
-* Live updates via relay
-
-```
+| Step | Expected |
+|------|----------|
+| `inspect` | FIT metadata and layer counts |
+| `verify` | Signature OK |
+| `open` | Full JSON planes (owner keys) |
+| `apply-delta` + `verify` | File updates in place; chain grows |
+| `share` | `.fitshare` written; recipient pubkey bound |
+| Investor UI | Subset of layers only |
+| Relay + `VITE_RELAY_WS` | Investor sees live fan-out events when owner pushes deltas (where enabled by share semantics) |
 
 ---
 
-If you want, I can also generate:
-- :contentReference[oaicite:0]{index=0}
-- or :contentReference[oaicite:1]{index=1}
+## 16. Quick troubleshooting
+
+```powershell
+cargo run -p fit-cli -- inspect demo\priya.fit
 ```
+
+```powershell
+cargo run -p fit-cli -- verify demo\priya.fit
+```
+
+- **`Missing layers` / share errors** — ensure `--layers` lists only integers **1–6**, comma-separated with no spaces (or trimmed), e.g. `2,3`.
+- **Relay unreachable** — ping Laptop A; confirm `VITE_RELAY_WS` uses A’s LAN IP and port **8765**; confirm Python relay is running and firewall allows the port.
+- **Investor sees no live updates** — confirm the share was created with **`--live-tracking`** and the subscriber uses the correct **`fit_id`** for `SUBSCRIBE` (must match the owner’s FIT id / envelope metadata).
+
+---
+
+## Reference: attester aliases for `--attester`
+
+Examples: `owner`, `cibil`, `gstn`, `bankaa`, `ca` (see CLI `parse_attester` in `fit-cli\src\main.rs`). Use the value that matches your demo storyline when calling `apply-delta`.
